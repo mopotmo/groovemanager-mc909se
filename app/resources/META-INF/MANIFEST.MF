@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Class-Path: gm.core.jar ext/jface.jar ext/swt.jar ext/swt-pi.jar ext/s
+ wt-mozilla.jar ext/runtime.jar ext/boot.jar ext/jsasio.jar ext/jsrex.
+ jar ext/floatconversion.jar ext/jogg-0.0.5.jar ext/jorbis-0.0.12.jar 
+ ext/tritonus_jorbis.jar ext/tritonus_share.jar ext/tritonus_remaining
+ .jar ext/jl0.4.jar
+Main-Class: com.groovemanager.app.mc909se.Starter
+

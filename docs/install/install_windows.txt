@@ -1,0 +1,26 @@
+----------------------------------------------------------------------------------------
+Installationsanleitung für den GrooveManager SampleEditor auf Windows
+----------------------------------------------------------------------------------------
+
+1. Zunächst muss ein Java Runtime Environment (JRE) auf dem System installiert sein.
+   Es wird dringend empfohlen, aufgrund der vielen Verbesserungen von Java Sound J2RE
+   1.5 zu verwenden, auch wenn es derzeit (Anfang August 2004) nur als Betaversion
+   verfügbar ist. Eine ältere JRE-Version (mindestens 1.3) müsste aber auch
+   funktionieren, wenn auch mit einigen Bugs.
+   Download-links finden sich unter http://java.sun.com/.
+   
+2. Die .zip-Datei sollte neben dieser Installationsanleitung noch die Dateien
+   install_sse_win.jar, launcher.ini, setup.exe sowie setup.manifest enthalten. Die
+   Installation wird durch den Aufruf von setup.exe gestartet.
+   
+3. Im nun folgenden Installationsdialog können nun das Installationsverzeichnis
+   sowie die zu installierenden Zusatzpackete ausgewählt werden.
+   
+4. Nach erfolgter Installation kann das Programm mit der .exe-Datei im gewählten
+   Installationsverzeichnis gestartet werden.
+
+----------------------------------------------------------------------------------------
+Dieses Programm ist im Rahmen der Diplomarbeit von Manuel Robledo entstanden.
+Eventuelle Updates finden sich unter http://www.groovemanager.com/manudiplom/.
+Für Fragen stehe ich gern unter manu@mopot.de zur Verfügung.
+----------------------------------------------------------------------------------------

@@ -1,0 +1,47 @@
+----------------------------------------------------------------------------------------
+Installationsanleitung für den GrooveManager SampleEditor (manuelle Installation)
+----------------------------------------------------------------------------------------
+
+1. Zunächst muss ein Java Runtime Environment (JRE) auf dem System installiert sein.
+   Es wird dringend empfohlen, aufgrund der vielen Verbesserungen von Java Sound J2RE
+   1.5 zu verwenden, auch wenn es derzeit (Anfang August 2004) nur als Betaversion
+   verfügbar ist. Eine ältere JRE-Version (mindestens 1.3) müsste aber auch
+   funktionieren, wenn auch mit einigen Bugs.
+   Download-links finden sich unter http://java.sun.com/.
+
+2. Ein Installationsverzeichnis für den Sampleeditor muss angelegt werden, in welches
+   sämtliche Dateien aus der .zip-Datei kopiert werden müssen.
+
+3. Als nächstes müssen die SWT-Bibliotheken für die gewünschte Plattform installiert
+   werden. Diese können von der eclipse-Homepage (http://www.eclipse.org/) bezogen
+   werden. Die im .zip-Archiv enthaltenen Dateien gehören in das /ext-Verzeichnis des
+   Installationspfads, die nativen Bibliotheken in den Installationspfad selbst.
+
+4. Zusätzlich zu SWT wird noch die JFace-Bibliothek benötigt. Dafür muss die eclipse-
+   Plattform, die ebenfalls von der eclipse-Homepage zu beziehen ist, komplett
+   heruntergeladen werden. Darin befindet sich im Verzeichnis
+   /plugins/org.eclipse.jface_*.*.* die Datei jface.jar. Welche PlugIns aus der
+   eclipse-Plattform aus Abhängigkeitsgründen mitinstalliert werden müssen, ist
+   versionsabhängig und kann in der Datei plugin.xml im Abschnitt <requires>
+   nachgesehen werden. Alle .jar-Dateien der benötigten PlugIns müssen dann ins /ext-
+   Verzeichnis kopiert werden.
+
+5. Das FloatConversionProvider-PlugIn ist bereits in den kopierten Dateien enthalten.
+   Die beiden anderen PlugIns (REXFileReader und ASIOMixerProvider) können bei Bedarf
+   zusätzlich installiert werden, allerdings nur, wenn die Installation auf einem
+   Windows-Betriebssystem stattfindet. Dazu müssen die .jar-Dateien in das /ext-
+   Verzeichnis und die .dll-Dateien direkt ins Installationsverzeichnis kopiert werden.
+
+6. Um weitere Java Sound PlugIns hinzuzufügen, sollten diese sinnvollerweise auch ins
+   /ext-Verzeichnis kopiert werden. Jede hinzugefügte .jar-Datei muss dann der
+   Classpath-Angabe in der Datei /META-INF/Manifest.MF innerhalb der Datei start.jar
+   hinzugefügt werden.
+
+7. Nun kann das installierte Programm mit dem Befehl
+   java -Djava.library.path=. -jar start.jar
+   im angelegten Installationsverzeichnis ausgeführt werden.	
+   >>Hinweis<<: Für Mac OS X muss die ebenfalls in der eclipse-Plattform enthaltene
+   Datei java_swt für die Ausführung benutzt werden, da SWT-Applikationen mit dem
+   normalen java-Aufruf unter Mac OS X nicht korrekt funktionieren. Der Aufruf heißt
+   dann entsprechend
+   java_swt -Djava.library.path=. -jar start.jar
