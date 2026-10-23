@@ -31,6 +31,9 @@ dependencies {
         // the generic SWT artifact selects the platform via Maven profiles, which Gradle ignores
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
+    // Java's own MIDI on macOS doesn't send SysEx and doesn't see devices
+    // plugged in later; CoreMIDI4J fixes both (and does nothing elsewhere)
+    implementation("uk.co.xfactory-librarians:coremidi4j:1.6")
     // JFace loads some of its icons as SVG
     runtimeOnly("org.eclipse.platform:org.eclipse.swt.svg:3.133.100") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")

@@ -94,7 +94,9 @@ public class SelectPatchPage extends WizardPage {
 		bankSelect = new Combo(patchComp, SWT.READ_ONLY | SWT.DROP_DOWN);
 		bankSelect.add("User");
 		bankSelect.add("Card");
-		bankSelect.select(0);
+		// Prefer the card if its patches are known, so that a free slot can
+		// be suggested
+		bankSelect.select(cardPatchNames != null ? 1 : 0);
 		
 		patchSelect = new Combo(patchComp, SWT.READ_ONLY | SWT.DROP_DOWN);
 		patchSelect.add("1");

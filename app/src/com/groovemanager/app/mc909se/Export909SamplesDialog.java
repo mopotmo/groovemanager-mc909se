@@ -107,6 +107,10 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 	 */
 	Button update;
 	/**
+	 * Indicates whether the destination contains the MC-909´s sample folder
+	 */
+	boolean sampleFolderFound;
+	/**
 	 * Instructions shown in the message area below the status
 	 */
 	final static String INSTRUCTIONS = "Select the samples you want to export and add them at the position you want.";
@@ -319,6 +323,19 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		setMessage("Please specify a destination folder.\nThen " + INSTRUCTIONS.substring(0, 1).toLowerCase() + INSTRUCTIONS.substring(1));
 
 		fillTable(exportPath, true);
+		
+		// Notice when the MC-909 gets connected or disconnected, so that
+		// "Update" doesn´t have to be pressed
+		Runnable watch = new Runnable() {
+			public void run() {
+				if(directory.isDisposed()) return;
+				String s = directory.getText();
+				if(!s.endsWith(File.separator)) s += File.separator;
+				if(new File(s + SMPL_FOLDER).isDirectory() != sampleFolderFound) fillTable(s, true);
+				directory.getDisplay().timerExec(1000, this);
+			}
+		};
+		comp.getDisplay().timerExec(1000, watch);
 		
 		return comp;
 	}
@@ -566,6 +583,15 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		// If the path didn't change, return.
 		if((!force) && exportPath.equals(path)) return;
 		
+		// Remember the samples that were added for export, so that they
+		// survive the update
+		ArrayList pending = new ArrayList();
+		TableItem[] oldItems = existingSamples.getItems();
+		for (int i = 0; i < oldItems.length; i++) {
+			if(oldItems[i].getData() instanceof Properties)
+				pending.add(new Object[]{oldItems[i].getData(), new Integer(oldItems[i].getText(0))});
+		}
+		
 		// First empty the table
 		existingSamples.removeAll();
 		
@@ -627,7 +653,13 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 			else setMessage(status + "\n" + INSTRUCTIONS, IMessageProvider.INFORMATION);
 		}
 		else{
-			setErrorMessage("No MC-909 sample folder found at " + path + SMPL_FOLDER + ". Is the MC-909 in USB storage mode, and does the destination point to its drive?");
+			setErrorMessage("The destination has no MC-909 sample folder (ROLAND/SMPL).\nWaiting for the MC-909 in USB storage mode...");
+		}
+		sampleFolderFound = f.isDirectory();
+		updateExportButton();
+		for (Iterator iter = pending.iterator(); iter.hasNext();) {
+			Object[] element = (Object[]) iter.next();
+			transferOne((Properties)element[0], ((Integer)element[1]).intValue());
 		}
 		directory.setText(exportPath);
 		ConfigManager.getDefault().getPrefStore().setValue("mc909_sample_export", exportPath);
@@ -751,6 +783,14 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		createPatches.setSelection(true);
 		createButton(parent, IDialogConstants.OK_ID, "Export", false);
 		createButton(parent, IDialogConstants.CANCEL_ID, "Close", false);
+		updateExportButton();
+	}
+	/**
+	 * Exporting is only possible if the MC-909´s sample folder was found
+	 */
+	private void updateExportButton(){
+		Button export = getButton(IDialogConstants.OK_ID);
+		if(export != null && !export.isDisposed()) export.setEnabled(sampleFolderFound);
 	}
 	public boolean close() {
 		try {

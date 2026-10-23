@@ -10,6 +10,8 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
 
+import uk.co.xfactorylibrarians.coremidi4j.CoreMidiDeviceProvider;
+
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 
@@ -271,6 +273,36 @@ public class MIDIManager implements IPropertyChangeListener{
 		return inDevice;
 	}
 	/**
+	 * Get the available MIDI devices. On macOS Java´s own MIDI devices don´t
+	 * send SysEx messages and don´t notice devices plugged in later, so
+	 * CoreMIDI4J replaces them there. On other systems this is the same as
+	 * MidiSystem.getMidiDeviceInfo().
+	 * @return The available MIDI devices
+	 */
+	public static MidiDevice.Info[] getDeviceInfos(){
+		try {
+			return CoreMidiDeviceProvider.getMidiDeviceInfo();
+		} catch (Throwable e) {
+			// CoreMIDI4J couldn´t be loaded
+			e.printStackTrace();
+			return MidiSystem.getMidiDeviceInfo();
+		}
+	}
+	/**
+	 * Get the name under which a device is shown and stored in the settings
+	 * @param info The device
+	 * @return The device name without the CoreMIDI4J prefix
+	 */
+	public static String getPortName(MidiDevice.Info info){
+		String name = info.getName();
+		if(name.startsWith(COREMIDI4J_PREFIX)) name = name.substring(COREMIDI4J_PREFIX.length());
+		return name;
+	}
+	/**
+	 * Prefix of the names of CoreMIDI4J devices
+	 */
+	private final static String COREMIDI4J_PREFIX = "CoreMIDI4J - ";
+	/**
 	 * Find a MIDI device by its name. The input and the output of an
 	 * interface often have the same name, so the direction is checked, too.
 	 * @param name The name of the device
@@ -280,9 +312,9 @@ public class MIDIManager implements IPropertyChangeListener{
 	 * @throws MidiUnavailableException If no such device exists
 	 */
 	private static MidiDevice findDevice(String name, boolean output) throws MidiUnavailableException{
-		MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
+		MidiDevice.Info[] infos = getDeviceInfos();
 		for(int i = 0; i < infos.length; i++){
-			if(!infos[i].getName().equals(name)) continue;
+			if(!getPortName(infos[i]).equals(name)) continue;
 			MidiDevice device = MidiSystem.getMidiDevice(infos[i]);
 			if((output ? device.getMaxReceivers() : device.getMaxTransmitters()) != 0) return device;
 		}

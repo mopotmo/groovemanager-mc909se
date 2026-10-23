@@ -249,6 +249,9 @@ public class ExportSamplesPage extends WizardPage {
 		fd.top = new FormAttachment(bank, 0, SWT.TOP);
 		rhythm.setLayoutData(fd);
 		rhythmNamesPath = "";
+		// Prefer the card if its rhythm sets are known, so that a free slot
+		// can be suggested
+		if(Mc909SoundFile.readNames(exportPath, Mc909SoundFile.RHYTHM_SETS) != null) bank.select(1);
 		updateRhythmList();
 		bank.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {

@@ -10,6 +10,8 @@ import javax.sound.midi.MidiUnavailableException;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.RadioGroupFieldEditor;
 
+import com.groovemanager.midi.MIDIManager;
+
 /**
  * This class represents a PreferencePage for selection of MIDI settings.
  * These settings can be applied to a MIDIManager instance 
@@ -34,10 +36,10 @@ public class MIDIPrefPage extends FieldEditorPreferencePage{
 	}
 	protected void createFieldEditors() {
 		// verfügbare MidiPorts holen
-		MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
+		MidiDevice.Info[] infos = MIDIManager.getDeviceInfos();
 		ArrayList in = new ArrayList(), out = new ArrayList();
 		for(int i = 0; i < infos.length; i++){
-			if(!infos[i].getName().substring(0, 4).equals("Java")){
+			if(!infos[i].getName().startsWith("Java")){
 				try {
 					MidiDevice device = MidiSystem.getMidiDevice(infos[i]);
 					if(device.getMaxReceivers() > 0 || device.getMaxReceivers() == -1) out.add(infos[i]);
@@ -53,11 +55,11 @@ public class MIDIPrefPage extends FieldEditorPreferencePage{
 		String[][] outPorts = new String[out.size()][2];
 		int i = 0;
 		for(Iterator iter = in.iterator(); iter.hasNext(); i++){
-			inPorts[i][0] = inPorts[i][1] = ((MidiDevice.Info)iter.next()).getName();
+			inPorts[i][0] = inPorts[i][1] = MIDIManager.getPortName((MidiDevice.Info)iter.next());
 		}
 		i = 0;
 		for(Iterator iter = out.iterator(); iter.hasNext(); i++){
-			outPorts[i][0] = outPorts[i][1] = ((MidiDevice.Info)iter.next()).getName();
+			outPorts[i][0] = outPorts[i][1] = MIDIManager.getPortName((MidiDevice.Info)iter.next());
 		}
 
 		
