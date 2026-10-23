@@ -4,7 +4,7 @@ A sample editor for the Roland MC-909 groovebox, written in Java (SWT/JFace, Jav
 
 > **Status:** `main` builds with Gradle and runs on Java 25 with current SWT/JFace (see [Running it today](#running-it-today)). The changes needed for that are kept small and are listed below. The original 2004 state is tagged [`v1.0`](../../tree/v1.0), and its release has the original distribution zips.
 
-![MC-909 Sample Editor, revived version on macOS](docs/screenshots/mc909-sample-editor.png)
+![MC-909 Sample Editor, revived version on macOS in the MC-909 theme](docs/screenshots/mc909-sample-editor.png)
 
 ## Features (2004)
 
