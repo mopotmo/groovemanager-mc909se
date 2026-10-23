@@ -7,11 +7,15 @@ package com.groovemanager.app.mc909se;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
@@ -32,6 +36,10 @@ public class WritePatchPage extends WizardPage {
 	 * The location of the patch on which the new patch is based
 	 */
 	private String location = "";
+	/**
+	 * Sends the patch again, if set
+	 */
+	Runnable resend;
 	/**
 	 * Create a new WritePatchPage
 	 * @param pageName The page´s name
@@ -65,6 +73,18 @@ public class WritePatchPage extends WizardPage {
 		gd.heightHint = writeImg.getBounds().height;
 		gd.widthHint = writeImg.getBounds().width;
 		write.setLayoutData(gd);
+		
+		final Button retry = new Button(comp, SWT.PUSH);
+		retry.setText("Send again");
+		retry.setToolTipText("Send the patch to the MC-909 again, e.g. after a MIDI problem");
+		retry.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if(resend == null) return;
+				retry.setEnabled(false);
+				BusyIndicator.showWhile(retry.getDisplay(), resend);
+				retry.setEnabled(true);
+			}
+		});
 		
 		Label loadLabel = new Label(comp, SWT.WRAP);
 		loadLabel.setText("In order to use the exportet samples, you will have to load the samples into RAM. This can be done either by rebooting the MC-909 or by selecting the samples in the Sample List and pressing Load (Shift + F3).");
@@ -106,6 +126,6 @@ public class WritePatchPage extends WizardPage {
 	private void updateMessage(){
 		setMessage("Part " + (part + 1) + " (MIDI channel " + (part + 1) + ") now plays the new patch, which is not stored yet. "
 			+ "To keep it, write it on the MC-909, e.g. to " + location + ". Then click Finish.\n"
-			+ "If part " + (part + 1) + " didn't change: check that it receives on MIDI channel " + (part + 1) + " and that the MC-909 accepts SysEx messages.");
+			+ "If part " + (part + 1) + " didn't change: check that it receives on MIDI channel " + (part + 1) + " and that the MC-909 accepts SysEx messages, then click \"Send again\".");
 	}
 }

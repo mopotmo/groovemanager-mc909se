@@ -37,6 +37,41 @@ public class CreatePatchDialog extends WizardDialog {
 	 */
 	int sampleNr;
 	/**
+	 * Create the patch on the MC-909 over MIDI
+	 * @return null if the patch has been sent, otherwise the reason why
+	 * sending failed
+	 */
+	private String sendPatch(){
+		int part = wizard.selectPatchPage.partSelect.getSelectionIndex();
+		try {
+			MIDIManager.getDefault().sendController(part, (byte)0, (byte)81);
+			byte cont;
+			if(wizard.selectPatchPage.bankSelect.getSelectionIndex() == 0) cont = 0;
+			else cont = 32;
+			int prog = wizard.selectPatchPage.patchSelect.getSelectionIndex();
+			if(prog > 127){
+				cont++;
+				prog -= 128;
+			}
+			
+			MIDIManager.getDefault().sendController(part, (byte)32, cont);
+			MIDIManager.getDefault().sendProgramChange(part, (byte)prog);
+			
+			MIDIManager.getDefault().sendSysEx(MC909SysEx.createPatchLevelMessage(part, (byte)127));
+			MIDIManager.getDefault().sendSysEx(MC909SysEx.createPatchNameMessage(part, wizard.patchName));
+			int right = 0;
+			if(isStereo) right = sampleNr + 1; 
+			MIDIManager.getDefault().sendSysEx(MC909SysEx.createPatchWaveMessage(part, 0, isUser, sampleNr, right));
+			return null;
+		} catch (InvalidMidiDataException e) {
+			e.printStackTrace();
+			return e.getMessage();
+		} catch (MidiUnavailableException e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
+	}
+	/**
 	 * Create a new CreatePatchWizard
 	 * @param parentShell The parent shell for the dialog
 	 * @param patchName The name to be used for the patch
@@ -59,35 +94,17 @@ public class CreatePatchDialog extends WizardDialog {
 			int part = wizard.selectPatchPage.partSelect.getSelectionIndex();
 			boolean card = wizard.selectPatchPage.bankSelect.getSelectionIndex() == 1;
 			int patchNr = wizard.selectPatchPage.patchSelect.getSelectionIndex();
-			try {
-				MIDIManager.getDefault().sendController(part, (byte)0, (byte)81);
-				byte cont;
-				if(wizard.selectPatchPage.bankSelect.getSelectionIndex() == 0) cont = 0;
-				else cont = 32;
-				int prog = wizard.selectPatchPage.patchSelect.getSelectionIndex();
-				if(prog > 127){
-					cont++;
-					prog -= 128;
-				}
-				
-				MIDIManager.getDefault().sendController(part, (byte)32, cont);
-				MIDIManager.getDefault().sendProgramChange(part, (byte)prog);
-				
-				MIDIManager.getDefault().sendSysEx(MC909SysEx.createPatchLevelMessage(part, (byte)127));
-				MIDIManager.getDefault().sendSysEx(MC909SysEx.createPatchNameMessage(part, wizard.patchName));
-				int right = 0;
-				if(isStereo) right = sampleNr + 1; 
-				MIDIManager.getDefault().sendSysEx(MC909SysEx.createPatchWaveMessage(part, 0, isUser, sampleNr, right));
-				
-			} catch (InvalidMidiDataException e) {
-				e.printStackTrace();
-				wizard.selectPatchPage.setErrorMessage("Sending the patch failed: " + e.getMessage());
-				return;
-			} catch (MidiUnavailableException e) {
-				e.printStackTrace();
-				wizard.selectPatchPage.setErrorMessage("Sending the patch failed: " + e.getMessage());
+			String error = sendPatch();
+			if(error != null){
+				wizard.selectPatchPage.setErrorMessage("Sending the patch failed: " + error);
 				return;
 			}
+			wizard.writePatchPage.resend = new Runnable() {
+				public void run() {
+					String error = sendPatch();
+					wizard.writePatchPage.setErrorMessage(error == null ? null : "Sending the patch failed: " + error);
+				}
+			};
 			wizard.selectPatchPage.setErrorMessage(null);
 			wizard.writePatchPage.setPatch(part, card, patchNr);
 			super.nextPressed();
