@@ -1,0 +1,76 @@
+# Builds the native installers with jpackage on each platform. On a tag
+# v<version> they are attached to the GitHub release of that tag; a manual run
+# only uploads them as workflow artifacts.
+name: Installers
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            platform: macos-arm64
+          - runner: macos-15-intel
+            platform: macos-x64
+          - runner: windows-latest
+            platform: windows-x64
+          - runner: ubuntu-latest
+            platform: linux-x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Install WiX (needed by jpackage for the msi)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add --global WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2
+
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=1.1.0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build installer
+        shell: bash
+        run: ./gradlew jpackage -PappVersion=${{ steps.version.outputs.version }}
+
+      - name: Rename for the platform
+        shell: bash
+        run: |
+          mkdir dist
+          for f in build/jpackage/output/*; do
+            mv "$f" "dist/groovemanager-mc909se-${{ steps.version.outputs.version }}-${{ matrix.platform }}.${f##*.}"
+          done
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: dist/*
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

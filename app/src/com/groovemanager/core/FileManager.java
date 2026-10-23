@@ -30,6 +30,11 @@ public abstract class FileManager {
 	 */
 	public final String EXT_PATH = tellExtPath();
 	/**
+	 * Name of the system property that can be used to set the root path
+	 * instead of the directory "root" under the current working directory
+	 */
+	public final static String ROOT_PROPERTY = "groovemanager.root";
+	/**
 	 * The default FileManager instance
 	 */
 	public final static FileManager DEFAULT_FILE_MANAGER = createDefault();
@@ -69,6 +74,10 @@ public abstract class FileManager {
 	private static FileManager createDefault(){
 		return new FileManager(){
 			protected String tellRootPath(){
+				// set by the native installers, which can´t rely on the
+				// working directory
+				String root = System.getProperty(ROOT_PROPERTY);
+				if(root != null) return new File(root).getAbsolutePath();
 				File f = new File("root");
 				return f.getAbsolutePath();
 			}
@@ -83,6 +92,18 @@ public abstract class FileManager {
 				return System.getProperty("user.home");
 			}
 			protected void setErrorHandler() {
+				if(System.getProperty(ROOT_PROPERTY) != null){
+					// installed: the root directory is read-only, so log
+					// to the user´s home directory
+					File dir = new File(System.getProperty("user.home"), ".groovemanager");
+					dir.mkdirs();
+					try {
+						System.setErr(new PrintStream(new FileOutputStream(new File(dir, "error.log"))));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					return;
+				}
 				File f = new File(getRootPath("error.log"));
 				if(!f.exists())
 					try {

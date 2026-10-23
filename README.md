@@ -56,6 +56,16 @@ Related repositories:
 
 ## Running it today
 
+### Installers
+
+The [releases](../../releases) have installers for macOS (Apple Silicon and Intel), Windows and Linux. They include a Java runtime and install the MC-909 Sample Editor. The installers aren't signed:
+- **macOS:** on the first start, macOS refuses to open the app. Open *System Settings → Privacy & Security* and click *Open Anyway*, or run `xattr -dr com.apple.quarantine "/Applications/MC-909 Sample Editor.app"`.
+- **Windows:** SmartScreen warns about an unknown publisher. Click *More info → Run anyway*.
+
+The installed app writes its log to `~/.groovemanager/error.log`.
+
+### From source
+
 You need a JDK 25 (for example `brew install openjdk@25` on macOS). Gradle and the SWT/JFace libraries for your platform are downloaded by the Gradle wrapper:
 
 ```sh
@@ -64,6 +74,8 @@ You need a JDK 25 (for example `brew install openjdk@25` on macOS). Gradle and t
 ```
 
 The app runs from the `app` directory and loads its icons from `app/root`. Errors go to `app/root/error.log`. Settings are stored under your home directory. Try the files in `samples/`.
+
+`./gradlew jpackage` builds the installer for the current platform into `build/jpackage/output` (dmg, msi or deb; the msi needs [WiX](https://wixtoolset.org)). The GitHub workflow `.github/workflows/installers.yml` builds all of them for a `v*` tag. The app icon is drawn by `packaging/icon/IconGenerator.java`.
 
 Tested on macOS (Apple Silicon). Windows and Linux should work but haven't been tested yet. Not working or untested:
 - **MIDI on macOS:** Java's built-in MIDI on macOS doesn't support SysEx, so creating patches on the MC-909 and the MIDI preview are untested. A missing MIDI device only produces warnings in the log.
@@ -74,6 +86,7 @@ What was changed for the revival (see the `Revival:` commits):
 - `java.util.ServiceLoader` instead of the removed `sun.misc.Service`, and Java's built-in `PCM_FLOAT` encoding instead of the floatconversion plugin.
 - `Thread.interrupt()` instead of `Thread.stop()`, which throws since Java 20.
 - The waveform is drawn in paint events through an off-screen image. Drawing directly on the control and XOR drawing crash on current macOS. The selection is now drawn semi-transparent.
+- `FileManager` takes the resource directory from the system property `groovemanager.root` if set (used by the installers) and then logs to `~/.groovemanager/error.log`.
 - macOS: ⌘ instead of Ctrl for shortcuts and marker editing, space for play/stop anywhere in the window, edit actions are updated on every change (macOS doesn't open the menu for shortcuts), file drops from the Finder, and workarounds for SWT layout problems (tab labels, info panels, right bar).
 
 ## Original 2004 build
