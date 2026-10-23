@@ -164,14 +164,14 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 			public void mouseDoubleClick(MouseEvent e) {
 			}
 			public void mouseDown(MouseEvent e) {
-				WaveFormDisplay.this.mouseDown(e.x, e.y, (e.stateMask & SWT.SHIFT) > 0, (e.stateMask & SWT.CTRL) > 0);
+				WaveFormDisplay.this.mouseDown(e.x, e.y, (e.stateMask & SWT.SHIFT) > 0, (e.stateMask & SWT.MOD1) > 0);
 				if(editMarkers && selectedMarker != null && mouseDown) getComposite().setCursor(moveMarkerCursor);
 				else getComposite().setCursor(normalCursor);
 			}
 			public void mouseUp(MouseEvent e) {
-				WaveFormDisplay.this.mouseUp(e.x, e.y, (e.stateMask & SWT.SHIFT) > 0, (e.stateMask & SWT.CTRL) > 0);
+				WaveFormDisplay.this.mouseUp(e.x, e.y, (e.stateMask & SWT.SHIFT) > 0, (e.stateMask & SWT.MOD1) > 0);
 				if(editMarkers){
-					if((e.stateMask & SWT.CTRL) > 0){
+					if((e.stateMask & SWT.MOD1) > 0){
 						if(getMarkerFromMousePos(e.x) == null) getComposite().setCursor(editMarkerCursor);
 						else getComposite().setCursor(deleteMarkerCursor);
 					}
@@ -188,10 +188,10 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		
 		comp.addMouseMoveListener(new MouseMoveListener() {
 			public void mouseMove(MouseEvent e) {
-				WaveFormDisplay.this.mouseMove(e.x, e.y, (e.stateMask & SWT.SHIFT) > 0, (e.stateMask & SWT.CTRL) > 0);
+				WaveFormDisplay.this.mouseMove(e.x, e.y, (e.stateMask & SWT.SHIFT) > 0, (e.stateMask & SWT.MOD1) > 0);
 				if(!mouseDown){
 					if(editMarkers){
-						if((e.stateMask & SWT.CTRL) > 0){
+						if((e.stateMask & SWT.MOD1) > 0){
 							if(getMarkerFromMousePos(e.x) == null) getComposite().setCursor(editMarkerCursor);
 							else getComposite().setCursor(deleteMarkerCursor);
 						}
@@ -212,11 +212,11 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 				if(selectedMarker == null || !editMarkers) return;
 				switch (e.keyCode) {
 					case SWT.ARROW_LEFT :
-						if((e.stateMask & SWT.CTRL) > 0) moveMarker(selectedMarker, Math.max(0, selectedMarker.getPosition() - 1));
+						if((e.stateMask & SWT.MOD1) > 0) moveMarker(selectedMarker, Math.max(0, selectedMarker.getPosition() - 1));
 						else moveMarker(selectedMarker, Math.max(0, selectedMarker.getPosition() - moveStep));
 						break;
 					case SWT.ARROW_RIGHT :
-						if((e.stateMask & SWT.CTRL) > 0) moveMarker(selectedMarker, Math.min(selectedMarker.getPosition() + 1, getTotalLength()));
+						if((e.stateMask & SWT.MOD1) > 0) moveMarker(selectedMarker, Math.min(selectedMarker.getPosition() + 1, getTotalLength()));
 						else moveMarker(selectedMarker, Math.min(selectedMarker.getPosition() + moveStep, getTotalLength()));
 						break;
 					default :

@@ -52,12 +52,16 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
@@ -219,15 +223,6 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				case '-' :
 					zoomOut();
 					break;
-				case ' ' :
-					if(player.getStatus() == AudioPlayer.PAUSE_PLAY ||
-						player.getStatus() == AudioPlayer.PAUSE_REC)
-						transportPause();
-					else if(player.getStatus() == AudioPlayer.PLAYING ||
-							player.getStatus() == AudioPlayer.RECORDING) transportStop();
-					else if(player.getStatus() == AudioPlayer.READY_FOR_PLAY) transportPlay();
-					else if(player.getStatus() == AudioPlayer.READY_FOR_REC) transportRecord();
-						break;
 				default :
 					break;
 			}
@@ -235,6 +230,63 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		public void keyReleased(KeyEvent e) {
 		}
 	};
+	/**
+	 * Display filter that toggles playback with the space key, regardless of
+	 * which control in this window has the focus. Text input controls keep
+	 * the space key. The filter also keeps a focused button from being
+	 * pressed by the space key.
+	 */
+	/**
+	 * Updates the enabled state of the edit actions. It is called when the
+	 * edit menu is shown and before a shortcut is processed, because on macOS
+	 * the menu isn't shown for shortcuts (on Windows it is), and disabled
+	 * actions would ignore their shortcut.
+	 */
+	protected IMenuListener editMenuUpdater;
+	/**
+	 * Display filter that updates the edit actions before a shortcut with the
+	 * Command/Ctrl key is processed
+	 */
+	protected Listener shortcutFilter = new Listener() {
+		public void handleEvent(Event e) {
+			if((e.stateMask & SWT.MOD1) == 0 || editMenuUpdater == null) return;
+			if(!(e.widget instanceof Control) || getShell() == null || ((Control)e.widget).getShell() != getShell()) return;
+			editMenuUpdater.menuAboutToShow(null);
+		}
+	};
+	protected Listener spaceFilter = new Listener() {
+		public void handleEvent(Event e) {
+			if(e.character != ' ' || (e.stateMask & SWT.MODIFIER_MASK) != 0) return;
+			if(!(e.widget instanceof Control)) return;
+			Control c = (Control)e.widget;
+			if(c.isDisposed() || getShell() == null || c.getShell() != getShell()) return;
+			if(c instanceof Text || c instanceof Combo || c instanceof Spinner) return;
+			e.doit = false;
+			togglePlay();
+		}
+	};
+	/**
+	 * Start or stop playback (or recording) depending on the current state
+	 */
+	protected void togglePlay(){
+		if(player.getStatus() == AudioPlayer.PAUSE_PLAY ||
+			player.getStatus() == AudioPlayer.PAUSE_REC)
+			transportPause();
+		else if(player.getStatus() == AudioPlayer.PLAYING ||
+				player.getStatus() == AudioPlayer.RECORDING) transportStop();
+		else if(player.getStatus() == AudioPlayer.READY_FOR_PLAY) transportPlay();
+		else if(player.getStatus() == AudioPlayer.READY_FOR_REC) transportRecord();
+	}
+	/**
+	 * Adapt the accelerator in a menu text to the platform: on macOS, the
+	 * Ctrl shortcuts use the Command key
+	 * @param text The menu text containing the accelerator after a tab
+	 * @return The text to use on this platform
+	 */
+	protected static String shortcut(String text){
+		if(SWT.getPlatform().equals("cocoa")) return text.replace("Ctrl+", "Command+");
+		return text;
+	}
 
 	/**
 	 * Create a new SimpleSampleEditor
@@ -794,6 +846,15 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		leftBar.addKeyListener(keyListener);
 		rightBar.addKeyListener(keyListener);
 		sashForm.addKeyListener(keyListener);
+		final Display display = getShell().getDisplay();
+		display.addFilter(SWT.KeyDown, spaceFilter);
+		display.addFilter(SWT.KeyDown, shortcutFilter);
+		getShell().addDisposeListener(new DisposeListener() {
+			public void widgetDisposed(DisposeEvent e) {
+				display.removeFilter(SWT.KeyDown, spaceFilter);
+				display.removeFilter(SWT.KeyDown, shortcutFilter);
+			}
+		});
 		
 		DropTarget target = new DropTarget(getShell(), DND.DROP_LINK | DND.DROP_DEFAULT);
 		target.setTransfer(new Transfer[]{FileTransfer.getInstance()});
@@ -865,17 +926,17 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * @param fileMenu The file Menu´s MenuManager
 	 */
 	protected void createFileMenu(MenuManager fileMenu){
-		final FileNewAction fileNewAction = new FileNewAction("&New\tCtrl+N");
+		final FileNewAction fileNewAction = new FileNewAction(shortcut("&New\tCtrl+N"));
 		fileNewAction.setId("New");
-		fileNewAction.setAccelerator(SWT.CTRL | 'n');
+		fileNewAction.setAccelerator(SWT.MOD1 | 'n');
 		fileMenu.add(fileNewAction);
 		fileNewAction.addFileNewListener(this);
 		
 		fileMenu.add(new Separator());
 		
-		fileOpenAction = new FileOpenAction("&Open\tCtrl+O", true);
+		fileOpenAction = new FileOpenAction(shortcut("&Open\tCtrl+O"), true);
 		fileOpenAction.setId("Open");
-		fileOpenAction.setAccelerator(SWT.CTRL | 'o');
+		fileOpenAction.setAccelerator(SWT.MOD1 | 'o');
 		fileMenu.add(fileOpenAction);
 		fileOpenAction.addFileOpenListener(this);
 		
@@ -887,15 +948,15 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 
 		fileMenu.add(new Separator());
 		
-		fileSaveAction = new FileSaveAction("Save\tCtrl+S");
+		fileSaveAction = new FileSaveAction(shortcut("Save\tCtrl+S"));
 		fileSaveAction.setId("Save");
-		fileSaveAction.setAccelerator(SWT.CTRL | 's');
+		fileSaveAction.setAccelerator(SWT.MOD1 | 's');
 		fileMenu.add(fileSaveAction);
 		fileSaveAction.addFileSaveListener(this);
 
-		fileSaveAsAction = new SaveAudioFileAsAction("Save &As...\tCtrl+Shift+S", true);
+		fileSaveAsAction = new SaveAudioFileAsAction(shortcut("Save &As...\tCtrl+Shift+S"), true);
 		fileSaveAsAction.setId("SaveAs");
-		fileSaveAsAction.setAccelerator(SWT.CTRL | SWT.SHIFT | 's');
+		fileSaveAsAction.setAccelerator(SWT.MOD1 | SWT.SHIFT | 's');
 		fileMenu.add(fileSaveAsAction);
 		fileSaveAsAction.addAudioFileSaveListener(this);
 	}
@@ -949,17 +1010,17 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 */
 	protected void createEditMenu(MenuManager editMenu){
 		// Copy
-		final EditAction copy = new EditAction(this, "&Copy\tCtrl+C", EditAction.COPY);
+		final EditAction copy = new EditAction(this, shortcut("&Copy\tCtrl+C"), EditAction.COPY);
 		copy.setId("Copy");
 		editMenu.add(copy);
 
 		// Cut
-		final EditAction cut = new EditAction(this, "C&ut\tCtrl+X", EditAction.CUT);
+		final EditAction cut = new EditAction(this, shortcut("C&ut\tCtrl+X"), EditAction.CUT);
 		cut.setId("Cut");
 		editMenu.add(cut);
 
 		// Paste
-		final EditAction paste = new EditAction(this, "&Paste\tCtrl+V", EditAction.PASTE);
+		final EditAction paste = new EditAction(this, shortcut("&Paste\tCtrl+V"), EditAction.PASTE);
 		paste.setId("Paste");
 		editMenu.add(paste);
 
@@ -971,30 +1032,30 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		editMenu.add(delete);
 		
 		// Trim
-		final EditAction trim = new EditAction(this, "&Trim\tCtrl+T", EditAction.TRIM);
+		final EditAction trim = new EditAction(this, shortcut("&Trim\tCtrl+T"), EditAction.TRIM);
 		trim.setId("Trim");
 		editMenu.add(trim);
 		
 		editMenu.add(new Separator());
 		
 		// Undo
-		final EditAction undo = new EditAction(this, "&Undo\tCtrl+Z", EditAction.UNDO);
+		final EditAction undo = new EditAction(this, shortcut("&Undo\tCtrl+Z"), EditAction.UNDO);
 		undo.setId("Undo");
 		editMenu.add(undo);
 
 		// Redo
-		final EditAction redo = new EditAction(this, "&Redo\tCtrl+Y", EditAction.REDO);
+		final EditAction redo = new EditAction(this, shortcut("&Redo\tCtrl+Y"), EditAction.REDO);
 		redo.setId("Redo");
 		editMenu.add(redo);
 		
-		editMenu.addMenuListener(new IMenuListener() {
+		editMenuUpdater = new IMenuListener() {
 			public void menuAboutToShow(IMenuManager manager) {
 				WaveTab wt = getActiveTab();
 				if(wt == null){
 					undo.setEnabled(false);
-					undo.setText("&Undo\tCtrl+Z");
+					undo.setText(shortcut("&Undo\tCtrl+Z"));
 					redo.setEnabled(false);
-					redo.setText("&Redo\tCtrl+Y");
+					redo.setText(shortcut("&Redo\tCtrl+Y"));
 					delete.setEnabled(false);
 					copy.setEnabled(false);
 					cut.setEnabled(false);
@@ -1003,9 +1064,9 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				}
 				else{
 					undo.setEnabled(wt.canUndo());
-					undo.setText("Undo " + wt.getUndoName() + "\tCtrl+Z");
+					undo.setText(shortcut("Undo " + wt.getUndoName() + "\tCtrl+Z"));
 					redo.setEnabled(wt.canRedo());
-					redo.setText("Redo " + wt.getRedoName() + "\tCtrl+Y");
+					redo.setText(shortcut("Redo " + wt.getRedoName() + "\tCtrl+Y"));
 					Selection sel = wt.waveDisplay.getSelection();
 					if(sel.getLeft() >= sel.getRight()){
 						copy.setEnabled(false);
@@ -1023,7 +1084,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 					else paste.setEnabled(false);
 				}
 			}
-		});
+		};
+		editMenu.addMenuListener(editMenuUpdater);
 	}
 	/**
 	 * Add the effect menu elements to the given menu manager
