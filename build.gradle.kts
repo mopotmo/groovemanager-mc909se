@@ -55,6 +55,16 @@ sourceSets {
     }
 }
 
+// the about dialog reads the version from the manifest
+tasks.jar {
+    manifest {
+        attributes(
+            "Implementation-Title" to "MC-909 Sample Editor",
+            "Implementation-Version" to project.version,
+        )
+    }
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
 }
@@ -89,7 +99,7 @@ tasks.register<JavaExec>("runSse") {
 // Native installers (dmg on macOS, msi on Windows, deb on Linux) with a
 // bundled Java runtime. jpackage can only build for the platform it runs on,
 // see .github/workflows/installers.yml.
-version = findProperty("appVersion") as String? ?: "1.3.1"
+version = findProperty("appVersion") as String? ?: "1.4.0"
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
 
 val jpackageInput = layout.buildDirectory.dir("jpackage/input")

@@ -22,6 +22,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.AudioFileFormat.Type;
 
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
@@ -71,6 +72,7 @@ import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
 
 import com.groovemanager.actions.ConfigAction;
+import com.groovemanager.gui.custom.AboutDialog;
 import com.groovemanager.actions.file.FileCloseAction;
 import com.groovemanager.actions.file.FileCloseListener;
 import com.groovemanager.actions.file.FileNewAction;
@@ -1093,6 +1095,43 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		
 	}
 	/**
+	 * Add the help menu elements to the given menu manager
+	 * @param helpMenu The help Menu´s MenuManager
+	 */
+	protected void createHelpMenu(MenuManager helpMenu){
+		helpMenu.add(new Action("Support on Ko-fi...") {
+			public void run() {
+				AboutDialog.openURL(AboutDialog.KOFI_URL);
+			}
+		});
+		if(SWT.getPlatform().equals("cocoa")){
+			// On macOS "About" is an item of the application menu
+			Menu systemMenu = Display.getDefault().getSystemMenu();
+			MenuItem[] items = systemMenu == null ? new MenuItem[0] : systemMenu.getItems();
+			for (int i = 0; i < items.length; i++) {
+				if(items[i].getID() == SWT.ID_ABOUT) items[i].addListener(SWT.Selection, new Listener() {
+					public void handleEvent(Event e) {
+						showAbout();
+					}
+				});
+			}
+		}
+		else{
+			helpMenu.add(new Separator());
+			helpMenu.add(new Action("&About " + getTitle()) {
+				public void run() {
+					showAbout();
+				}
+			});
+		}
+	}
+	/**
+	 * Show the about dialog
+	 */
+	protected void showAbout(){
+		new AboutDialog(getShell(), getTitle()).open();
+	}
+	/**
 	 * Create the action that will be used for "Settings"
 	 * @return The action that will be used for "Settings"
 	 */
@@ -1219,6 +1258,11 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		MenuManager optionsMenu = new MenuManager("&Options");
 		createOptionsMenu(optionsMenu);
 		menuManager.add(optionsMenu);
+		
+		// Help
+		MenuManager helpMenu = new MenuManager("&Help");
+		createHelpMenu(helpMenu);
+		menuManager.add(helpMenu);
 
 		return menuManager;
 	}
