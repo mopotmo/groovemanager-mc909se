@@ -87,7 +87,11 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	/**
 	 * Use a gradient Background for this WaveFormDisplay?
 	 */
-	gradient;
+	gradient,
+	/**
+	 * Draw rounded corners and an inner shadow?
+	 */
+	soft;
 	/**
 	 * The default cursor
 	 */
@@ -276,6 +280,8 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 			currentGC = bufferGC;
 			renderingContent = true;
 			try{
+				// the margins around the channels are not drawn otherwise
+				fill(backgroundColor, 0, 0, area.width, area.height);
 				super.redraw();
 			}
 			finally{
@@ -294,6 +300,26 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		finally{
 			currentGC = null;
 		}
+		if(soft){
+			// a faint shadow along the top edge makes the display look
+			// recessed, like the LCD of the MC-909 behind its bezel
+			gc.setAlpha(64);
+			gc.setForeground(comp.getDisplay().getSystemColor(SWT.COLOR_BLACK));
+			gc.setBackground(channelBackgroundColor);
+			gc.fillGradientRectangle(0, 0, area.width, Math.min(8, area.height), true);
+			gc.setAlpha(255);
+			Frames.clipCorners(gc, area.width, area.height, comp.getParent().getBackground());
+		}
+		Frames.draw(gc, 0, 0, area.width, area.height);
+	}
+	/**
+	 * Switch between square displays and rounded displays with an inner
+	 * shadow
+	 * @param soft true for rounded displays with an inner shadow
+	 */
+	public void setSoft(boolean soft){
+		this.soft = soft;
+		requestPaint();
 	}
 	/**
 	 * Request a paint event for this display. May be called from any thread.
@@ -353,6 +379,16 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 */
 	public void setChannelBackgroundColor(Color c){
 		channelBackgroundColor = c;
+		redraw();
+	}
+	/**
+	 * Set the color used for the area around the channels
+	 * @param c The new background color
+	 */
+	public void setBackgroundColor(Color c){
+		backgroundColor = c;
+		// also shows in the border and behind the scroll bar
+		comp.setBackground(c);
 		redraw();
 	}
 	/**
@@ -417,6 +453,10 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 			currentGC.fillGradientRectangle(x, y, width, height, true);
 		}
 		else fill(channelBackgroundColor, x, y, width, height);
+		// the middle line is drawn behind the waveform, so that it only
+		// shows where the signal is quiet
+		currentGC.setForeground(middleLineColor);
+		currentGC.drawLine(x, y + height / 2, x + width, y + height / 2);
 	}
 	protected void drawGlobalForeground(int x, int y, int width, int height) {
 		// painted on top of the contentBuffer in paint()
@@ -431,9 +471,7 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		}
 	}
 	protected void drawChannelForeground(int x, int y, int width, int height) {
-		if(currentGC == null) return;
-		currentGC.setForeground(middleLineColor);
-		currentGC.drawLine(x, y + height / 2, x + width, y + height / 2);
+		// the middle line is part of the channel background
 	}
 	protected void drawWaveLine(int x, int y, int x2, int y2) {
 		if(currentGC == null) return;

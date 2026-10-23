@@ -25,11 +25,14 @@ import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 
+import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.custom.CustomComposite;
 import com.groovemanager.gui.custom.KeyboardKeyListener;
+import com.groovemanager.gui.theme.Theme;
+import com.groovemanager.gui.theme.ThemeListener;
+import com.groovemanager.gui.theme.ThemeManager;
 import com.groovemanager.midi.MIDIListener;
 import com.groovemanager.midi.MIDIManager;
 /**
@@ -77,7 +80,20 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 	/**
 	 * Constant for the height of one key in pixels
 	 */
-	KEY_HEIGHT = 90;
+	KEY_HEIGHT = 90,
+	/**
+	 * Height of the pad number bars. This and the following gaps are
+	 * measured on the MC-909, relative to the key width.
+	 */
+	NUM_HEIGHT = Math.round(KEY_WIDTH * 0.30f),
+	/**
+	 * Gap between the pad number bars and the keys
+	 */
+	NUM_GAP = Math.round(KEY_WIDTH * 0.12f),
+	/**
+	 * Gap between two groups of pad numbers
+	 */
+	NUM_GROUP_GAP = Math.round(KEY_WIDTH * 0.11f);
 	/**
 	 * List of KeyboardKeyListeners registered with this Composite
 	 */
@@ -178,9 +194,9 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 		Composite comp = new Composite(parent, SWT.NONE);
 		
 		GridLayout gl = new GridLayout(4, true);
-		gl.horizontalSpacing = 4;
-		gl.marginHeight = 2;
-		gl.marginWidth = 2;
+		gl.horizontalSpacing = NUM_GROUP_GAP;
+		gl.marginHeight = 0;
+		gl.marginWidth = 0;
 		comp.setLayout(gl);
 		
 		GridData gd;
@@ -210,7 +226,7 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 		Composite topComp = createTopComp(getComposite());
 		FormData fd = new FormData();
 		fd.top = new FormAttachment(0, 0);
-		fd.height = 20;
+		fd.height = NUM_HEIGHT;
 		fd.width = 16 * KEY_WIDTH;
 		fd.left = new FormAttachment(0, KEY_WIDTH * 59 - KEY_WIDTH * firstKey);
 		topComp.setLayoutData(fd);
@@ -218,10 +234,12 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 		Composite padComp = createPadComp(getComposite());
 		fd = new FormData();
 		fd.left = new FormAttachment(0, 0);
-		fd.top = new FormAttachment(topComp, 0, SWT.BOTTOM);
+		fd.top = new FormAttachment(topComp, NUM_GAP, SWT.BOTTOM);
 		padComp.setLayoutData(fd);
 		
 		keys = createKeys(padComp, firstKey, lastKey);
+		keys[0].setOuterLeft(true);
+		keys[keys.length - 1].setOuterRight(true);
 		getComposite().pack();
 	}
 	/**
@@ -349,8 +367,14 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 	 * @see com.groovemanager.gui.custom.CustomComposite#createComposite(org.eclipse.swt.widgets.Composite, int)
 	 */
 	protected Composite createComposite(Composite parent, int style) {
-		Composite comp = new Composite(parent, style);
+		final Composite comp = new Composite(parent, style);
 		comp.setLayout(new FormLayout());
+		// shows around the pad numbers
+		ThemeManager.getDefault().addThemeListener(comp, new ThemeListener() {
+			public void applyTheme(Theme theme) {
+				comp.setBackground(theme.getKeyPanel());
+			}
+		});
 		
 		comp.addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent e) {
@@ -448,11 +472,11 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 			c.setLayout(gl);
 			c.addPaintListener(new PaintListener(){
 				public void paintControl(PaintEvent event) {
-					Display display = event.display;
 					GC gc = event.gc;
-					gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+					gc.setBackground(ThemeManager.getDefault().getTheme().getNumBackground());
 					Rectangle rect = getComposite().getClientArea();
-					gc.fillRoundRectangle(rect.x, rect.y, rect.width, rect.height, 15, 15);
+					gc.setAntialias(SWT.ON);
+					gc.fillRoundRectangle(rect.x, rect.y, rect.width, rect.height, 2 * Spacing.RADIUS, 2 * Spacing.RADIUS);
 				}
 			});
 			
@@ -461,9 +485,15 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 				gd = new GridData(GridData.FILL_HORIZONTAL);
 				labels[i] = new Label(c, SWT.CENTER);
 				labels[i].setLayoutData(gd);
-				labels[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-				labels[i].setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
 			}
+			ThemeManager.getDefault().addThemeListener(c, new ThemeListener() {
+				public void applyTheme(Theme theme) {
+					for(int i = 0; i < 4; i++){
+						labels[i].setForeground(theme.getNumForeground());
+						labels[i].setBackground(theme.getNumBackground());
+					}
+				}
+			});
 			return c;
 		}
 		/**

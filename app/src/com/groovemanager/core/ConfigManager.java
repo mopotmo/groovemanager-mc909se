@@ -8,6 +8,7 @@ import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.preference.PreferenceStore;
 
+import com.groovemanager.pref.AppearancePrefPage;
 import com.groovemanager.pref.AudioPrefPage;
 import com.groovemanager.pref.MIDIPrefPage;
 
@@ -126,6 +127,13 @@ public class ConfigManager {
 			PreferencePage midiPage = new MIDIPrefPage();
 			PreferenceNode midiNode = new PreferenceNode("midi", midiPage);
 			manager.addToRoot(midiNode);
+		}
+		
+		if(checkPage("appearance", pages)){
+			// Theme selection
+			PreferencePage appearancePage = new AppearancePrefPage();
+			PreferenceNode appearanceNode = new PreferenceNode("appearance", appearancePage);
+			manager.addToRoot(appearanceNode);
 		}
 		
 		return manager;

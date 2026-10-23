@@ -37,6 +37,9 @@ import com.groovemanager.exception.NotFinishedException;
 import com.groovemanager.exception.NotReadyException;
 import com.groovemanager.gui.custom.ProgressMonitor;
 import com.groovemanager.gui.custom.WaveFormDisplay;
+import com.groovemanager.gui.theme.Theme;
+import com.groovemanager.gui.theme.ThemeListener;
+import com.groovemanager.gui.theme.ThemeManager;
 import com.groovemanager.sampled.AudioManager;
 import com.groovemanager.sampled.AudioPlayer;
 import com.groovemanager.sampled.AudioPlayerProvider;
@@ -58,12 +61,12 @@ import com.groovemanager.sampled.waveform.CreatePeakFileThread;
 import com.groovemanager.sampled.waveform.DynamicAudioFileWaveForm;
 import com.groovemanager.sampled.waveform.DynamicPeakWaveForm;
 import com.groovemanager.sampled.waveform.Marker;
+import com.groovemanager.sampled.waveform.PeakWaveForm;
+import com.groovemanager.sampled.waveform.SavePeakWaveFormThread;
 import com.groovemanager.sampled.waveform.Selectable;
 import com.groovemanager.sampled.waveform.SelectableListener;
 import com.groovemanager.sampled.waveform.Selection;
 import com.groovemanager.sampled.waveform.WaveForm;
-import com.groovemanager.sampled.waveform.PeakWaveForm;
-import com.groovemanager.sampled.waveform.SavePeakWaveFormThread;
 import com.groovemanager.sampled.waveform.WaveFormProvider;
 import com.groovemanager.thread.ProgressThread;
 import com.groovemanager.thread.SaveFileThread;
@@ -308,7 +311,11 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		cutList = new CutList(afSource);
 		cutList.addModificationListener(this);
 		waveDisplay = new WaveFormDisplay(parent, waveStyle, false);
-		waveDisplay.setChannelBackgroundColor(parent.getDisplay().getSystemColor(SWT.COLOR_BLACK));
+		ThemeManager.getDefault().addThemeListener(waveDisplay.getComposite(), new ThemeListener() {
+			public void applyTheme(Theme theme) {
+				theme.applyWaveColors(waveDisplay);
+			}
+		});
 		waveDisplay.addWaveDisplayListener(editor);
 		waveDisplay.setSource(this);
 		waveDisplay.setEditMarkers(true);

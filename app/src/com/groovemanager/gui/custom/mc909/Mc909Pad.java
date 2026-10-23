@@ -8,17 +8,17 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
 
+import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.custom.CustomComposite;
 import com.groovemanager.gui.custom.KeyboardKey;
 import com.groovemanager.gui.custom.KeyboardKeyListener;
+import com.groovemanager.gui.theme.Theme;
+import com.groovemanager.gui.theme.ThemeManager;
 
 /**
  * A Mc909Pad is an implementation of the KeyboardKey the gives a visual
@@ -49,14 +49,6 @@ public class Mc909Pad extends CustomComposite implements KeyboardKey{
 	 * The type of this Pad (either <code>BLACK</code> or <code>WHITE</code>
 	 */
 	private final int type;
-	/**
-	 * The Color for the pad when it is not pressed
-	 */
-	private final Color padColor = new Color(Display.getCurrent(), new RGB(220,212,208));
-	/**
-	 * The Color for the pad when it is pressed
-	 */
-	private final Color pressedColor = new Color(Display.getCurrent(), new RGB(255,144,18));
 	/**
 	 * If this value is true, a pad has to be clicked a second time to be
 	 * released. otherwise it will be released on mouse release.
@@ -149,23 +141,23 @@ public class Mc909Pad extends CustomComposite implements KeyboardKey{
 		comp.addPaintListener(new PaintListener(){
 
 			public void paintControl(PaintEvent event) {
-				Display display = event.display;
 				GC gc = event.gc;
+				Theme theme = ThemeManager.getDefault().getTheme();
 				Rectangle rect = getComposite().getClientArea();
 				gc.setLineWidth(LINE_WIDTH);
-				if(type == WHITE) gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-				else gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+				if(type == WHITE) gc.setBackground(theme.getKeyWhite());
+				else gc.setBackground(theme.getKeyBlack());
 				
 				// Hintergrund
 				gc.fillRectangle(rect);
 				
 				// Pad-Inhalt
-				if(pressed) gc.setBackground(pressedColor);
-				else gc.setBackground(padColor);
-				gc.fillRoundRectangle(rect.x + 1, rect.y + 1, rect.width - 1, rect.height - 1, 15, 15);
+				gc.setBackground(theme.getPad(pressed));
+				gc.fillRoundRectangle(rect.x + 1, rect.y + 1, rect.width - 1, rect.height - 1, 2 * Spacing.RADIUS, 2 * Spacing.RADIUS);
 				
 				// Pad-Rahmen
-				gc.drawRoundRectangle(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2, 15, 15);
+				gc.setForeground(theme.getPadFrame());
+				gc.drawRoundRectangle(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2, 2 * Spacing.RADIUS, 2 * Spacing.RADIUS);
 			}
 			
 		});

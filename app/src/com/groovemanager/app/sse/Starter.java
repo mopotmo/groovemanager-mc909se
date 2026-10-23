@@ -5,6 +5,7 @@
 package com.groovemanager.app.sse;
 
 import com.groovemanager.core.FileManager;
+import com.groovemanager.gui.theme.ThemeManager;
 
 /**
  * Starter class for the SampleEditor
@@ -15,6 +16,8 @@ public class Starter {
 	public static void main(String[] args){
 		// Init Classpath and extension dir
 		FileManager.getDefault();
+		// Switch to the theme's appearance before any widget is created
+		ThemeManager.getDefault();
 		final SimpleSampleEditor s = new SimpleSampleEditor();
 		s.setBlockOnOpen(true);
 		/*

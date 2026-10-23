@@ -82,11 +82,17 @@ import com.groovemanager.core.FileManager;
 import com.groovemanager.exception.NotFinishedException;
 import com.groovemanager.exception.NotReadyException;
 import com.groovemanager.gui.EditorWindow;
+import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.custom.ChooseFormatDialog;
 import com.groovemanager.gui.custom.InfoGroup;
 import com.groovemanager.gui.custom.InfoGroupContainer;
 import com.groovemanager.gui.custom.ProgressMonitor;
+import com.groovemanager.gui.custom.ThemeButton;
+import com.groovemanager.gui.custom.TransportIcons;
 import com.groovemanager.gui.custom.WaveFormDisplay;
+import com.groovemanager.gui.theme.Theme;
+import com.groovemanager.gui.theme.ThemeListener;
+import com.groovemanager.gui.theme.ThemeManager;
 import com.groovemanager.sampled.AudioManager;
 import com.groovemanager.sampled.AudioPlayer;
 import com.groovemanager.sampled.AudioPlayerListener;
@@ -95,13 +101,13 @@ import com.groovemanager.sampled.providers.AudioFileOutputStream;
 import com.groovemanager.sampled.waveform.AbstractWaveFormDisplay;
 import com.groovemanager.sampled.waveform.AudioFileWaveForm;
 import com.groovemanager.sampled.waveform.DynamicAudioFileWaveForm;
-import com.groovemanager.sampled.waveform.WaveForm;
 import com.groovemanager.sampled.waveform.PeakWaveForm;
 import com.groovemanager.sampled.waveform.Selectable;
 import com.groovemanager.sampled.waveform.SelectableListener;
 import com.groovemanager.sampled.waveform.SelectableWaveFormDisplay;
-import com.groovemanager.sampled.waveform.WaveDisplayListener;
 import com.groovemanager.sampled.waveform.Selection;
+import com.groovemanager.sampled.waveform.WaveDisplayListener;
+import com.groovemanager.sampled.waveform.WaveForm;
 import com.groovemanager.thread.SaveFileThread;
 
 /**
@@ -185,7 +191,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	/**
 	 * Zoom buttons
 	 */
-	protected Button zoomIn, zoomOut, zoomSel, zoomAll;
+	protected ThemeButton zoomIn, zoomOut, zoomSel, zoomAll;
 	/**
 	 * The current source for paste operations
 	 */
@@ -384,13 +390,19 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * @param comp The parent composite
 	 */
 	protected void createControlBarElements(Composite comp){
-		comp.setLayout(new FillLayout());
-		zoomWaveDisplay = new WaveFormDisplay(comp, SWT.BORDER, false);
+		// margins on all sides but the top, the gap above comes from the
+		// areas above
+		GridLayout gl = Spacing.grid(1);
+		gl.marginWidth = gl.marginBottom = Spacing.MARGIN;
+		comp.setLayout(gl);
+		zoomWaveDisplay = new WaveFormDisplay(comp, SWT.NONE, false);
+		zoomWaveDisplay.getComposite().setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		zoomWaveDisplay.setPositionColor(zoomWaveDisplay.getComposite().getDisplay().getSystemColor(SWT.COLOR_BLACK));
-		zoomWaveDisplay.setChannelBackgroundColor(zoomWaveDisplay.getComposite().getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-		zoomWaveDisplay.setWaveColor(zoomWaveDisplay.getComposite().getDisplay().getSystemColor(SWT.COLOR_BLACK));
-		zoomWaveDisplay.setSelectionColor(zoomWaveDisplay.getComposite().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+		ThemeManager.getDefault().addThemeListener(zoomWaveDisplay.getComposite(), new ThemeListener() {
+			public void applyTheme(Theme theme) {
+				theme.applyOverviewColors(zoomWaveDisplay);
+			}
+		});
 		zoomWaveDisplay.addSelectableListener(new SelectableListener() {
 			public void selectionChanged(Selectable s, Selection sel) {
 			}
@@ -667,14 +679,16 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		FormData fd;
 		
 		Composite comp = new Composite(parent, SWT.NONE);
-		comp.setLayout(new GridLayout(1, true));
+		GridLayout gl = Spacing.grid(1);
+		gl.verticalSpacing = Spacing.BUTTON;
+		comp.setLayout(gl);
 		fd = new FormData();
 		fd.left = new FormAttachment(0, 0);
 		fd.bottom = fd.right = new FormAttachment(100, 0);
 		fd.height = -1;
 		comp.setLayoutData(fd);
 		
-		zoomIn = new Button(comp, SWT.PUSH);
+		zoomIn = new ThemeButton(comp);
 		zoomIn.setText("Zoom +");
 		zoomIn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		zoomIn.addSelectionListener(new SelectionListener() {
@@ -686,7 +700,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		});
 		zoomIn.setEnabled(false);
 
-		zoomOut = new Button(comp, SWT.PUSH);
+		zoomOut = new ThemeButton(comp);
 		zoomOut.setText("Zoom -");
 		zoomOut.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		zoomOut.addSelectionListener(new SelectionListener() {
@@ -698,7 +712,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		});
 		zoomOut.setEnabled(false);
 		
-		zoomSel = new Button(comp, SWT.PUSH);
+		zoomSel = new ThemeButton(comp);
 		zoomSel.setText("Zoom Sel");
 		zoomSel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		zoomSel.addSelectionListener(new SelectionListener() {
@@ -710,7 +724,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		});
 		zoomSel.setEnabled(false);
 
-		zoomAll = new Button(comp, SWT.PUSH);
+		zoomAll = new ThemeButton(comp);
 		zoomAll.setText("Zoom All");
 		zoomAll.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		zoomAll.addSelectionListener(new SelectionListener() {
@@ -747,7 +761,17 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		int trimHeight = size.y - mainContent.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
 		int minHeight = trimHeight + controlBar.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + rightBarHeight;
 		getShell().setMinimumSize(Math.min(size.x, 640), minHeight);
-		return new Point(Math.max(size.x, 1000), Math.max(size.y, minHeight));
+		// leave room for a few lines of the file list in the left bar
+		return new Point(Math.max(size.x, 1000), Math.max(Math.max(size.y, minHeight), 680));
+	}
+	/**
+	 * On macOS the menu is not part of the window, so there is nothing to
+	 * separate from the contents
+	 * @see org.eclipse.jface.window.ApplicationWindow#showTopSeperator()
+	 */
+	protected boolean showTopSeperator() {
+		if(SWT.getPlatform().equals("cocoa")) return false;
+		return super.showTopSeperator();
 	}
 	/**
 	 * 
@@ -761,8 +785,11 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		// The all-containing Composite
 		mainContent = new Composite(parent, style);
 		mainContent.setLayout(new FormLayout());
+		// Labels and Composites follow the theme, including the status line
+		ThemeManager.getDefault().addShell(getShell());
 		
-		// The Control Bar
+		// The Control Bar, over the whole width. Its elements keep their own
+		// margins.
 		controlBar = new Composite(mainContent, getControlBarStyle());
 		fd = new FormData();
 		fd.left = faBegin;
@@ -776,17 +803,19 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		createRightBarElements(rightBar);
 		fd = new FormData();
 		fd.width = -1;
-		fd.right = faEnd;
-		fd.bottom = new FormAttachment(controlBar, 0, SWT.TOP);
-		fd.top = faBegin;
+		fd.right = new FormAttachment(100, -Spacing.MARGIN);
+		fd.bottom = new FormAttachment(controlBar, -Spacing.GAP, SWT.TOP);
+		fd.top = new FormAttachment(0, Spacing.MARGIN);
 		rightBar.setLayoutData(fd);
 
 		// The SashForm
 		sashForm = new SashForm(mainContent, getSashFormStyle());
+		sashForm.SASH_WIDTH = Spacing.GAP;
 		fd = new FormData();
-		fd.left = fd.top = faBegin;
-		fd.right = new FormAttachment(rightBar, 0, SWT.LEFT);
-		fd.bottom = new FormAttachment(controlBar, 0, SWT.TOP);
+		fd.left = new FormAttachment(0, Spacing.MARGIN);
+		fd.top = new FormAttachment(0, Spacing.MARGIN);
+		fd.right = new FormAttachment(rightBar, -Spacing.GAP, SWT.LEFT);
+		fd.bottom = new FormAttachment(controlBar, -Spacing.GAP, SWT.TOP);
 		sashForm.setLayoutData(fd);
 		
 		// The left Bar
@@ -1046,7 +1075,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * @return The action that will be used for "Settings"
 	 */
 	protected ConfigAction createConfigAction(){
-		return new ConfigAction("&Settings\tAlt+S", new String[]{"audio"});
+		return new ConfigAction("&Settings\tAlt+S", new String[]{"audio", "appearance"});
 	}
 	/**
 	 * Add the edit menu elements to the given menu manager
@@ -1302,7 +1331,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		/**
 		 * Transport buttons
 		 */
-		protected Button playButton, recButton, backButton, fwdButton, backSearchButton, fwdSearchButton, pauseButton, stopButton, loopButton;
+		protected ThemeButton playButton, recButton, backButton, fwdButton, backSearchButton, fwdSearchButton, pauseButton, stopButton, loopButton;
 		/**
 		 * Transport button images
 		 */
@@ -1320,36 +1349,24 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		 */
 		protected boolean activePlay, activePause, activeLoop, activeRec;
 		/**
+		 * All images currently created for the transport buttons
+		 */
+		protected ArrayList images = new ArrayList();
+		/**
 		 * Create a new TransportBar
 		 * @param parent The parent composite
 		 */
 		TransportBar(Composite parent){
 			comp = new Composite(parent, getTransportBarStyle());
-			comp.setLayout(new GridLayout(1, true));
-			String path = fileManager.getRootPath("icons/trans/");
-			String dispath = fileManager.getRootPath("icons/trans/dis/");
-			String actpath = fileManager.getRootPath("icons/trans/act/");
-			String actdispath = fileManager.getRootPath("icons/trans/act/dis/");
-			Button b;
-			Image img;
+			GridLayout gl = Spacing.grid(1);
+			gl.verticalSpacing = Spacing.BUTTON;
+			comp.setLayout(gl);
+			ThemeButton b;
 			
 				
 			// >
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			img = new Image(comp.getDisplay(), actpath + "play.gif");
-			img.setBackground(b.getBackground());
-			playActiveEnabled = img;
-			img = new Image(comp.getDisplay(), actdispath + "play.gif");
-			img.setBackground(b.getBackground());
-			playActiveDisabled = img;
-			img = new Image(comp.getDisplay(), dispath + "play.gif");
-			img.setBackground(b.getBackground());
-			playDisabled = img;
-			img = new Image(comp.getDisplay(), path + "play.gif");
-			img.setBackground(b.getBackground());
-			playEnabled = img;
-			b.setImage(img);
 			b.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					if(canPlay) transportPlay();
@@ -1360,21 +1377,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			playButton = b;
 	
 			// ||
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			img = new Image(comp.getDisplay(), actpath + "pause.gif");
-			img.setBackground(b.getBackground());
-			pauseActiveEnabled = img;
-			img = new Image(comp.getDisplay(), actdispath + "pause.gif");
-			img.setBackground(b.getBackground());
-			pauseActiveDisabled = img;
-			img = new Image(comp.getDisplay(), dispath + "pause.gif");
-			img.setBackground(b.getBackground());
-			pauseDisabled = img;
-			img = new Image(comp.getDisplay(), path + "pause.gif");
-			img.setBackground(b.getBackground());
-			pauseEnabled = img;
-			b.setImage(img);
 			b.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					if(canPause) transportPause();
@@ -1385,15 +1389,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			pauseButton = b;
 	
 			// []
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			img = new Image(comp.getDisplay(), dispath + "stop.gif");
-			img.setBackground(b.getBackground());
-			stopDisabled = img;
-			img = new Image(comp.getDisplay(), path + "stop.gif");
-			img.setBackground(b.getBackground());
-			stopEnabled = img;
-			b.setImage(img);
 			b.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					if(canStop) transportStop();
@@ -1404,21 +1401,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			stopButton = b;
 			
 			// O
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			img = new Image(comp.getDisplay(), actpath + "rec.gif");
-			img.setBackground(b.getBackground());
-			recActiveEnabled = img;
-			img = new Image(comp.getDisplay(), actdispath + "rec.gif");
-			img.setBackground(b.getBackground());
-			recActiveDisabled = img;
-			img = new Image(comp.getDisplay(), dispath + "rec.gif");
-			img.setBackground(b.getBackground());
-			recDisabled = img;
-			img = new Image(comp.getDisplay(), path + "rec.gif");
-			img.setBackground(b.getBackground());
-			recEnabled = img;
-			b.setImage(img);
 			b.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					if(canRec) transportRecord();
@@ -1430,7 +1414,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	
 			/*
 			// |<<
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			img = new Image(comp.getDisplay(), dispath + "back.gif");
 			img.setBackground(b.getBackground());
@@ -1449,7 +1433,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			backButton = b;
 			
 			// <<
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			img = new Image(comp.getDisplay(), dispath + "back_search.gif");
 			img.setBackground(b.getBackground());
@@ -1468,7 +1452,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			backSearchButton = b;
 	
 			// >>
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			img = new Image(comp.getDisplay(), dispath + "fwd_search.gif");
 			img.setBackground(b.getBackground());
@@ -1487,7 +1471,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			fwdSearchButton = b;
 			
 			// >>|
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			img = new Image(comp.getDisplay(), dispath + "fwd.gif");
 			img.setBackground(b.getBackground());
@@ -1507,21 +1491,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			*/
 
 			// Loop
-			b = new Button(comp, SWT.PUSH);
+			b = new ThemeButton(comp);
 			b.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			img = new Image(comp.getDisplay(), actpath + "loop.gif");
-			img.setBackground(b.getBackground());
-			loopActiveEnabled = img;
-			img = new Image(comp.getDisplay(), actdispath + "loop.gif");
-			img.setBackground(b.getBackground());
-			loopActiveDisabled = img;
-			img = new Image(comp.getDisplay(), dispath + "loop.gif");
-			img.setBackground(b.getBackground());
-			loopDisabled = img;
-			img = new Image(comp.getDisplay(), path + "loop.gif");
-			img.setBackground(b.getBackground());
-			loopEnabled = img;
-			b.setImage(img);
 			b.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					if(canLoop) transportLoop();
@@ -1531,7 +1502,83 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				}
 			});
 			loopButton = b;
+			
+			ThemeManager.getDefault().addThemeListener(comp, new ThemeListener() {
+				public void applyTheme(Theme theme) {
+					loadImages(theme);
+				}
+			});
+			comp.addDisposeListener(new DisposeListener() {
+				public void widgetDisposed(DisposeEvent e) {
+					disposeImages();
+				}
+			});
 	
+		}
+		/**
+		 * Create the images of the transport buttons for the given theme and
+		 * show the ones matching the current button states
+		 * @param theme The theme to create the images for
+		 */
+		protected void loadImages(Theme theme){
+			disposeImages();
+			String path = fileManager.getRootPath("icons/trans/");
+			String dispath = fileManager.getRootPath("icons/trans/dis/");
+			String actpath = fileManager.getRootPath("icons/trans/act/");
+			String actdispath = fileManager.getRootPath("icons/trans/act/dis/");
+			playActiveEnabled = icon(theme, actpath, "play", TransportIcons.PLAY, true, true);
+			playActiveDisabled = icon(theme, actdispath, "play", TransportIcons.PLAY, false, true);
+			playDisabled = icon(theme, dispath, "play", TransportIcons.PLAY, false, false);
+			playEnabled = icon(theme, path, "play", TransportIcons.PLAY, true, false);
+			pauseActiveEnabled = icon(theme, actpath, "pause", TransportIcons.PAUSE, true, true);
+			pauseActiveDisabled = icon(theme, actdispath, "pause", TransportIcons.PAUSE, false, true);
+			pauseDisabled = icon(theme, dispath, "pause", TransportIcons.PAUSE, false, false);
+			pauseEnabled = icon(theme, path, "pause", TransportIcons.PAUSE, true, false);
+			stopDisabled = icon(theme, dispath, "stop", TransportIcons.STOP, false, false);
+			stopEnabled = icon(theme, path, "stop", TransportIcons.STOP, true, false);
+			recActiveEnabled = icon(theme, actpath, "rec", TransportIcons.REC, true, true);
+			recActiveDisabled = icon(theme, actdispath, "rec", TransportIcons.REC, false, true);
+			recDisabled = icon(theme, dispath, "rec", TransportIcons.REC, false, false);
+			recEnabled = icon(theme, path, "rec", TransportIcons.REC, true, false);
+			loopActiveEnabled = icon(theme, actpath, "loop", TransportIcons.LOOP, true, true);
+			loopActiveDisabled = icon(theme, actdispath, "loop", TransportIcons.LOOP, false, true);
+			loopDisabled = icon(theme, dispath, "loop", TransportIcons.LOOP, false, false);
+			loopEnabled = icon(theme, path, "loop", TransportIcons.LOOP, true, false);
+			if(canPlay) enablePlay(); else disablePlay();
+			if(canPause) enablePause(); else disablePause();
+			if(canStop) enableStop(); else disableStop();
+			if(canRec) enableRec(); else disableRec();
+			if(canLoop) enableLoop(); else disableLoop();
+			comp.layout();
+		}
+		/**
+		 * Create one transport button image
+		 * @param theme The current theme
+		 * @param dir The directory of the 2004 bitmap
+		 * @param name The name of the bitmap without extension
+		 * @param symbol The TransportIcons symbol to use instead of the bitmap
+		 * @param enabled true for the image of an enabled button
+		 * @param active true for the image of an active button
+		 * @return The new Image
+		 */
+		protected Image icon(Theme theme, String dir, String name, int symbol, boolean enabled, boolean active){
+			Image img;
+			if(theme.hasBitmapIcons()){
+				img = new Image(comp.getDisplay(), dir + name + ".gif");
+				img.setBackground(playButton.getBackground());
+			}
+			else img = TransportIcons.create(comp.getDisplay(), symbol, theme.getIconColor(enabled, active, symbol == TransportIcons.REC));
+			images.add(img);
+			return img;
+		}
+		/**
+		 * Dispose all images created by loadImages()
+		 */
+		protected void disposeImages(){
+			for (Iterator iter = images.iterator(); iter.hasNext();) {
+				((Image) iter.next()).dispose();
+			}
+			images.clear();
 		}
 		/**
 		 * Get the main composite

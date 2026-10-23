@@ -624,7 +624,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 							Mc909SampleInfo info = new Mc909SampleInfo(files[i]);
 							smplnr = Integer.parseInt(files[i].getName().substring(4, 8));
 							TableItem ti = insertItemAt(getIndexForNum(smplnr));
-							ti.setForeground(ti.getDisplay().getSystemColor(SWT.COLOR_BLACK));
+							ti.setForeground(null);
 							ti.setData(info);
 							ti.setText(0, ""+smplnr);
 							ti.setText(1, fillName(info.name));
@@ -686,7 +686,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 					File f = export((Properties)items[i].getData(), Integer.parseInt(items[i].getText(0)), path);
 					items[i].setData(new Mc909SampleInfo(f));
 					toExport.add(items[i]);
-					items[i].setForeground(getShell().getDisplay().getSystemColor(SWT.COLOR_BLACK));
+					items[i].setForeground(null);
 				} catch (NumberFormatException e) {
 					e.printStackTrace();
 					errorMessage(e.getMessage());

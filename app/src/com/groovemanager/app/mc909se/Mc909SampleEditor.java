@@ -51,8 +51,14 @@ import com.groovemanager.app.sse.SimpleSampleEditor;
 import com.groovemanager.app.sse.WaveTab;
 import com.groovemanager.core.FileManager;
 import com.groovemanager.exception.NotFinishedException;
+import com.groovemanager.gui.Spacing;
+import com.groovemanager.gui.custom.Frames;
 import com.groovemanager.gui.custom.KeyboardKeyListener;
+import com.groovemanager.gui.custom.ThemeButton;
 import com.groovemanager.gui.custom.mc909.Mc909KeyComposite;
+import com.groovemanager.gui.theme.Theme;
+import com.groovemanager.gui.theme.ThemeListener;
+import com.groovemanager.gui.theme.ThemeManager;
 import com.groovemanager.midi.MIDIManager;
 import com.groovemanager.sampled.AudioPlayer;
 import com.groovemanager.sampled.waveform.Markable;
@@ -219,7 +225,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		/**
 		 * Import/Export samples button
 		 */
-		Button imExport,
+		ThemeButton imExport,
 		/**
 		 * Export Rhythm set button
 		 */
@@ -295,11 +301,13 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		 */
 		protected void createContents(Composite comp) {
 			stack = new StackLayout();
-			comp.setLayout(new FormLayout());
+			FormLayout layout = new FormLayout();
+			layout.spacing = Spacing.BUTTON;
+			comp.setLayout(layout);
 			FormData fd;
 			
 			// Export Rhythm set button
-			exportRS = new Button(comp, SWT.PUSH);
+			exportRS = new ThemeButton(comp);
 			exportRS.setText("Export Rhythm set");
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
@@ -316,7 +324,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			exportRS.setEnabled(false);
 			
 			// Import / Export button
-			imExport = new Button(comp, SWT.PUSH);
+			imExport = new ThemeButton(comp);
 			imExport.setText("Import / Export");
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
@@ -333,7 +341,9 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			});
 			
 			// Properties
-			propertiesComp = new Composite(comp, SWT.BORDER);
+			propertiesComp = new Composite(comp, SWT.NONE);
+			Frames.add(propertiesComp);
+			stack.marginWidth = stack.marginHeight = Frames.INSET;
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
 			fd.height = -1;
@@ -343,13 +353,16 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			propertiesComp.setLayout(stack);
 			
 			// File list
-			fileListComp = new Composite(comp, SWT.BORDER | SWT.V_SCROLL);
+			fileListComp = new Composite(comp, SWT.NONE);
+			Frames.add(fileListComp);
 			fd = new FormData();
 			fd.top = fd.left = new FormAttachment(0, 0);
 			fd.right = new FormAttachment(100, 0);
 			fd.bottom = new FormAttachment(propertiesComp, 0);
 			fileListComp.setLayoutData(fd);
-			fileListComp.setLayout(new FillLayout());
+			FillLayout fl = new FillLayout();
+			fl.marginWidth = fl.marginHeight = Frames.INSET;
+			fileListComp.setLayout(fl);
 			fileList = new List(fileListComp, SWT.SINGLE);
 			sListener = new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
@@ -492,8 +505,8 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		Properties(Composite parent, WaveTab wt){
 			this.wt = wt;
 			comp = new Composite(parent, SWT.NONE);
-			GridLayout gl = new GridLayout();
-			gl.numColumns = 2;
+			GridLayout gl = Spacing.grid(2);
+			gl.marginWidth = gl.marginHeight = Spacing.MARGIN;
 			//gl.makeColumnsEqualWidth = true;
 			comp.setLayout(gl);
 			GridData gd;
@@ -626,7 +639,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			bpmText.setLayoutData(gd);
 			
 			// Calc
-			Button calc = new Button(comp, SWT.PUSH);
+			ThemeButton calc = new ThemeButton(comp);
 			calc.setText("Calc BPM from selection");
 			calc.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
@@ -716,7 +729,6 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 	 */
 	protected void createControlBarElements(Composite comp) {
 		comp.setLayout(new FormLayout());
-		comp.setBackground(comp.getDisplay().getSystemColor(SWT.COLOR_BLACK));
 
 		Composite top = new Composite(comp, SWT.NONE);
 		super.createControlBarElements(top);
@@ -726,15 +738,31 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		fd.right = new FormAttachment(100, 0);
 		top.setLayoutData(fd);
 		
-		Composite bottom = new Composite(comp, SWT.NONE);
+		// The strip with the keys goes over the whole width, like the front
+		// panel of the MC-909
+		final Composite bottom = new Composite(comp, SWT.NONE);
+		FormLayout bottomLayout = new FormLayout();
+		bottomLayout.marginHeight = Spacing.MARGIN;
+		bottom.setLayout(bottomLayout);
+		ThemeManager.getDefault().addThemeListener(bottom, new ThemeListener() {
+			public void applyTheme(Theme theme) {
+				bottom.setBackground(theme.getStripBackground());
+			}
+		});
 		Mc909KeyComposite w = new Mc909KeyComposite(bottom, 59, 74);
 		w.setNotesVisible(false);
 		w.addKeyListener(this);
 		w.setReceiveMidi(true);
 		
 		fd = new FormData();
-		int wi = bottom.computeSize(SWT.DEFAULT, SWT.DEFAULT).x / 2;
+		int wi = w.getComposite().computeSize(SWT.DEFAULT, SWT.DEFAULT).x / 2;
 		fd.left = new FormAttachment(50, -wi);
+		fd.top = new FormAttachment(0, 0);
+		w.getComposite().setLayoutData(fd);
+		
+		fd = new FormData();
+		fd.left = new FormAttachment(0, 0);
+		fd.right = fd.bottom = new FormAttachment(100, 0);
 		fd.top = new FormAttachment(top, 0, SWT.BOTTOM);
 		bottom.setLayoutData(fd);
 	}
@@ -772,13 +800,14 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 	 * @see com.groovemanager.app.sse.SimpleSampleEditor#createConfigAction()
 	 */
 	protected ConfigAction createConfigAction() {
-		return new ConfigAction("&Settings\tAlt+S", new String[]{"audio", "midi"});
+		return new ConfigAction("&Settings\tAlt+S", new String[]{"audio", "midi", "appearance"});
 	}
 	/**
 	 * @see com.groovemanager.app.sse.SimpleSampleEditor#getSashFormWeights()
 	 */
 	protected int[] getSashFormWeights() {
-		return new int[]{180, 620};
+		// wide enough for the loop mode and time-stretch popups
+		return new int[]{220, 580};
 	}
 	/**
 	 * Import a Sample from the MC909. The sample will be copied to a temporary

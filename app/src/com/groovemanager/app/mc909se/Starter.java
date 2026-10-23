@@ -4,7 +4,10 @@
  */
 package com.groovemanager.app.mc909se;
 
+import java.io.File;
+
 import com.groovemanager.core.FileManager;
+import com.groovemanager.gui.theme.ThemeManager;
 
 /**
  * Starter class for the Mc909SampleEditor 
@@ -15,6 +18,8 @@ public class Starter {
 	public static void main(String[] args){
 		// Init Classpath and extension dir
 		FileManager.getDefault();
+		// Switch to the theme's appearance before any widget is created
+		ThemeManager.getDefault();
 		final Mc909SampleEditor s = new Mc909SampleEditor();
 		s.setBlockOnOpen(true);
 		
@@ -32,6 +37,11 @@ public class Starter {
 			}
 		}.start();*/
 		
+		// Open the files given on the command line
+		s.create();
+		for (int i = 0; i < args.length; i++) {
+			s.fileOpened(new File(args[i]));
+		}
 		s.open();
 	}
 }

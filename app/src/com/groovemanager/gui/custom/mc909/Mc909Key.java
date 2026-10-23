@@ -10,10 +10,13 @@ import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 
+import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.custom.CustomComposite;
+import com.groovemanager.gui.theme.Theme;
+import com.groovemanager.gui.theme.ThemeListener;
+import com.groovemanager.gui.theme.ThemeManager;
 
 
 /**
@@ -43,6 +46,10 @@ public class Mc909Key extends CustomComposite{
 	 * The Label containing the note name and octave
 	 */
 	private Label note;
+	/**
+	 * true, if this key draws the left or right edge of the keyboard
+	 */
+	private boolean outerLeft, outerRight;
 	/**
 	 * Construct a new Mc909Key
 	 * @param parent The parent Composite
@@ -75,50 +82,75 @@ public class Mc909Key extends CustomComposite{
 		getComposite().addPaintListener(new PaintListener(){
 
 			public void paintControl(PaintEvent event) {
-				Display display = event.display;
 				GC gc = event.gc;
-				gc.setLineWidth(LINE_WIDTH);
+				Theme theme = ThemeManager.getDefault().getTheme();
+				// all lines are filled rectangles, so that they are exactly
+				// LINE_WIDTH pixels wide and meet the lines of the neighbour
+				// keys without gaps
+				gc.setBackground(theme.getKeyLine());
 				Rectangle rect = getComposite().getClientArea();
+				int l = LINE_WIDTH;
+				int blackHeight = (int)Math.round(rect.height * 0.8);
 				// obere Linie
-				gc.drawLine(rect.x, rect.y + 1, rect.x + rect.width, rect.y + 1);
+				gc.fillRectangle(rect.x, rect.y, rect.width, l);
 				// untere Linie
-				gc.drawLine(rect.x, rect.y + rect.height - 1, rect.x + rect.width, rect.y + rect.height - 1);
+				gc.fillRectangle(rect.x, rect.y + rect.height - l, rect.width, l);
 				
+				int split = -1;
 				switch(type){
 					case WHITE_BEGIN:
-						// Linie links
-						gc.drawLine(rect.x, rect.y, rect.x, rect.y + rect.height);
+						// Linie links, die rechte Taste zeichnet den Rest
+						gc.fillRectangle(rect.x, rect.y, l - l / 2, rect.height);
 						break;
 						
 					case WHITE_END:
 					// Linie rechts
-					gc.drawLine(rect.x + rect.width, rect.y, rect.x + rect.width, rect.y + rect.height);
+					gc.fillRectangle(rect.x + rect.width - l / 2, rect.y, l / 2, rect.height);
 					break;
 			
 					case BLACK_LEFT:
-					// Schwarze Taste
-					gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-					gc.fillRoundRectangle(rect.x, rect.y - 5, rect.x + rect.width, rect.y + 5 + (int)Math.round(rect.height * 0.8), 8, 8);
-					gc.drawLine(rect.x + (int)Math.round(rect.width * 0.66), rect.y - 1 + (int)Math.round(rect.height * 0.8), rect.x + (int)Math.round(rect.width * 0.66), rect.y + rect.height);
+					split = (int)Math.round(rect.width * 0.66);
 					break;
 
 					case BLACK_RIGHT:
-					// Schwarze Taste
-					gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-					gc.fillRoundRectangle(rect.x, rect.y - 5, rect.x + rect.width, rect.y + 5 + (int)Math.round(rect.height * 0.8), 8, 8);
-					gc.drawLine(rect.x + (int)Math.round(rect.width * 0.33), rect.y - 1 + (int)Math.round(rect.height * 0.8), rect.x + (int)Math.round(rect.width * 0.33), rect.y + rect.height);
+					split = (int)Math.round(rect.width * 0.33);
 					break;
 
 					case BLACK_MIDDLE:
-					// Schwarze Taste
-					gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-					gc.fillRoundRectangle(rect.x, rect.y - 5, rect.x + rect.width, rect.y + 5 + (int)Math.round(rect.height * 0.8), 8, 8);
-					gc.drawLine(rect.x + (int)Math.round(rect.width * 0.5), rect.y - 1 + (int)Math.round(rect.height * 0.8), rect.x + (int)Math.round(rect.width * 0.5), rect.y + rect.height);
+					split = (int)Math.round(rect.width * 0.5);
 					break;
 				}
+				if(split >= 0){
+					// Schwarze Taste und Trennlinie darunter
+					gc.setBackground(theme.getKeyBlack());
+					gc.setAntialias(SWT.ON);
+					gc.fillRoundRectangle(rect.x, rect.y, rect.width, blackHeight, 2 * Spacing.RADIUS, 2 * Spacing.RADIUS);
+					gc.setAntialias(SWT.OFF);
+					gc.setBackground(theme.getKeyLine());
+					gc.fillRectangle(rect.x + split - l / 2, rect.y + blackHeight, l, rect.height - blackHeight);
+				}
+				// outer edges of the whole keyboard
+				if(outerLeft) gc.fillRectangle(rect.x, rect.y, l, rect.height);
+				if(outerRight) gc.fillRectangle(rect.x + rect.width - l, rect.y, l, rect.height);
 			}
 		});
 		
+	}
+	/**
+	 * Draw the left edge of the keyboard on this key
+	 * @param outer true, if this is the first key of the keyboard
+	 */
+	public void setOuterLeft(boolean outer){
+		outerLeft = outer;
+		getComposite().redraw();
+	}
+	/**
+	 * Draw the right edge of the keyboard on this key
+	 * @param outer true, if this is the last key of the keyboard
+	 */
+	public void setOuterRight(boolean outer){
+		outerRight = outer;
+		getComposite().redraw();
 	}
 	/**
 	 * Set the visible status of the note name
@@ -150,7 +182,14 @@ public class Mc909Key extends CustomComposite{
 		lfd.top = new FormAttachment(83, 0);
 		note.setLayoutData(lfd);
 
-		comp.setBackground(comp.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+		final Composite c = comp;
+		ThemeManager.getDefault().addThemeListener(comp, new ThemeListener() {
+			public void applyTheme(Theme theme) {
+				c.setBackground(theme.getKeyWhite());
+				note.setBackground(theme.getKeyWhite());
+				note.setForeground(theme.getKeyLine());
+			}
+		});
 
 		return comp;
 	}
