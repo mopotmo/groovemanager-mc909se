@@ -288,6 +288,10 @@ public class Theme {
 	 */
 	boolean softWave;
 	/**
+	 * Strength of the gradient of the smoothed main and overview waveform
+	 */
+	protected final static float WAVE_GRADIENT = 0.5f, OVERVIEW_GRADIENT = 0.4f;
+	/**
 	 * Width of the slice markers in pixels
 	 */
 	int markerWidth = 1;
@@ -370,6 +374,8 @@ public class Theme {
 		d.setSoft(softWave);
 		d.setMarkerWidth(hc ? Math.max(2, markerWidth) : markerWidth);
 		d.setHighContrast(hc);
+		// the high contrast waveform stays flat
+		d.setWaveGradient(softWave && !hc ? WAVE_GRADIENT : 0);
 	}
 	/**
 	 * Apply the colors of the overview waveform display
@@ -390,6 +396,8 @@ public class Theme {
 		d.setSoft(softWave);
 		d.setMarkerWidth(hc ? Math.max(2, markerWidth) : markerWidth);
 		d.setHighContrast(hc);
+		// the high contrast waveform stays flat
+		d.setWaveGradient(softWave && !hc ? OVERVIEW_GRADIENT : 0);
 	}
 	/**
 	 * Get black or white, whichever contrasts more with the given color.

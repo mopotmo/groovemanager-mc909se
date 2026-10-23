@@ -24,6 +24,8 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Pattern;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -102,6 +104,12 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 * Width of the markers in pixels
 	 */
 	protected int markerWidth = 1;
+	/**
+	 * Strength of the vertical gradient of the smoothed waveform: how far
+	 * the color at the peaks is blended towards the background, from 0
+	 * (no gradient) to 1
+	 */
+	protected float waveGradient;
 	/**
 	 * Opacity of the middle line in the smoothed look
 	 */
@@ -335,6 +343,20 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 * Draw the markers opaque, also in the smoothed look
 	 * @param highContrast true for opaque markers
 	 */
+	/**
+	 * Set the strength of the vertical gradient of the smoothed waveform. The
+	 * waveform keeps its color at the middle line and is blended towards the
+	 * background at the peaks.
+	 * @param strength 0 for no gradient up to 1
+	 */
+	public void setWaveGradient(float strength){
+		waveGradient = Math.max(0, Math.min(1, strength));
+		redraw();
+	}
+	/**
+	 * Draw the markers opaque for a high contrast
+	 * @param highContrast true for opaque markers
+	 */
 	public void setHighContrast(boolean highContrast){
 		this.highContrast = highContrast;
 		requestPaint();
@@ -546,10 +568,53 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 				p.lineTo(leftOffset + x, smoothY(top, height, min, x, count));
 			}
 			p.close();
-			currentGC.fillPath(p);
+			if(waveGradient > 0) fillGradient(p, top, height);
+			else currentGC.fillPath(p);
 			p.dispose();
 		}
 		currentGC.setAntialias(SWT.DEFAULT);
+	}
+	/**
+	 * Fill the outline of a channel with a gradient, mirrored at the middle
+	 * line: the wave color at the middle line, blended towards the
+	 * background at the peaks
+	 * @param p The outline of the channel
+	 * @param top The top of the channel
+	 * @param height The height of the channel
+	 */
+	protected void fillGradient(Path p, int top, int height){
+		Color outer = blend(waveColor, channelBackgroundColor, waveGradient);
+		Rectangle clip = currentGC.getClipping();
+		int middle = top + height / 2;
+		Rectangle[] halves = {
+			new Rectangle(clip.x, top, clip.width, middle - top),
+			new Rectangle(clip.x, middle, clip.width, top + height - middle)
+		};
+		for (int i = 0; i < halves.length; i++) {
+			int edge = i == 0 ? top : top + height;
+			Pattern pattern = new Pattern(comp.getDisplay(), 0, edge, 0, middle, outer, waveColor);
+			currentGC.setClipping(halves[i].intersection(clip));
+			currentGC.setBackgroundPattern(pattern);
+			currentGC.fillPath(p);
+			currentGC.setBackgroundPattern(null);
+			pattern.dispose();
+		}
+		currentGC.setClipping(clip);
+		outer.dispose();
+	}
+	/**
+	 * Mix two colors
+	 * @param c The first color
+	 * @param towards The second color
+	 * @param amount The share of the second color, from 0 to 1
+	 * @return The new Color, to be disposed by the caller
+	 */
+	protected Color blend(Color c, Color towards, float amount){
+		RGB a = c.getRGB(), b = towards == null ? a : towards.getRGB();
+		return new Color(comp.getDisplay(), new RGB(
+				Math.round(a.red + (b.red - a.red) * amount),
+				Math.round(a.green + (b.green - a.green) * amount),
+				Math.round(a.blue + (b.blue - a.blue) * amount)));
 	}
 	/**
 	 * Calculate the y coordinate of a waveform outline point, smoothed with

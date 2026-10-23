@@ -9,6 +9,7 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -19,7 +20,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.TypedListener;
+import org.eclipse.swt.widgets.Listener;
 
 import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.theme.Theme;
@@ -105,8 +106,12 @@ public class DropHint extends Canvas implements ThemeListener{
 	 * Add a listener that is informed about clicks on this DropHint
 	 * @param listener The SelectionListener
 	 */
-	public void addSelectionListener(SelectionListener listener){
-		addListener(SWT.Selection, new TypedListener(listener));
+	public void addSelectionListener(final SelectionListener listener){
+		addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				listener.widgetSelected(new SelectionEvent(e));
+			}
+		});
 	}
 	/**
 	 * @see com.groovemanager.gui.theme.ThemeListener#applyTheme(com.groovemanager.gui.theme.Theme)
