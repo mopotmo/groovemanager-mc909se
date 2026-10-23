@@ -121,8 +121,8 @@ public class SelectPatchPage extends WizardPage {
 	private void updatePatchList(){
 		boolean card = bankSelect.getSelectionIndex() == 1;
 		Mc909SoundFile.fillCombo(patchSelect, 256, card ? cardPatchNames : null, Mc909SoundFile.EMPTY_PATCH);
-		if(!card) namesHint.setText("The names of the user patches can´t be read from the MC-909.");
-		else if(cardPatchNames == null) namesHint.setText("The card patches couldn´t be read from the memory card.");
+		if(!card) namesHint.setText("The names of the user patches can't be read from the MC-909.");
+		else if(cardPatchNames == null) namesHint.setText("The card patches couldn't be read from the memory card.");
 		else namesHint.setText("Card patch names as read from the memory card.");
 		namesHint.getParent().layout();
 	}

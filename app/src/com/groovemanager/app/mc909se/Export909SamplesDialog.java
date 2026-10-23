@@ -17,6 +17,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.wizard.WizardDialog;
@@ -101,6 +102,14 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 	 * Radio button for user selection of "USB-Select"
 	 */
 	Button internal, card;
+	/**
+	 * Button for reading the existing samples again
+	 */
+	Button update;
+	/**
+	 * Instructions shown in the message area below the status
+	 */
+	final static String INSTRUCTIONS = "Select the samples you want to export and add them at the position you want.";
 	/**
 	 * Relative path from the Mc909´s root path to the sample directory
 	 */
@@ -288,7 +297,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		nextNum.getComposite().setLayoutData(fd);
 		
 		// Update button
-		Button update = new Button(comp, SWT.PUSH);
+		update = new Button(comp, SWT.PUSH);
 		update.setText("Update");
 		fd = new FormData();
 		fd.right = new FormAttachment(transfer, 0, SWT.RIGHT);
@@ -298,14 +307,16 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		update.setLayoutData(fd);
 		update.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
-				fillTable(exportPath, true);
+				String s = directory.getText();
+				if(!s.endsWith(File.separator)) s += File.separator;
+				fillTable(s, true);
 			}
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
 		});
 		
 		setTitle("Export samples to MC909");
-		setMessage("Please specify a destination folder.\nThen select the samples you want to export and add them at the position you want.");
+		setMessage("Please specify a destination folder.\nThen " + INSTRUCTIONS.substring(0, 1).toLowerCase() + INSTRUCTIONS.substring(1));
 
 		fillTable(exportPath, true);
 		
@@ -563,12 +574,20 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		// Search the directoy for Mc909 samples
 		final File f = new File(path + SMPL_FOLDER);
 		if(f.isDirectory()){
+			// Reading the samples from the MC-909 can take a while, so show
+			// what is going on before the UI is blocked
+			setErrorMessage(null);
+			setMessage("Reading samples from " + path + " ...");
+			if(update != null) update.setEnabled(false);
+			getShell().update();
+			final int[] result = new int[3];
 			Runnable r = new Runnable(){
 				public void run(){
 					exportPath = p;
 					File[] files = f.listFiles(fileNameFilter);
 					int smplnr = 0;
 					int maxnr = 0;
+					result[0] = files.length;
 					for (int i = 0; i < files.length; i++) {
 						try {
 							Mc909SampleInfo info = new Mc909SampleInfo(files[i]);
@@ -589,14 +608,26 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 							maxnr = Math.max(maxnr, smplnr);
 						} catch (UnsupportedAudioFileException e1) {
 							e1.printStackTrace();
+							result[1]++;
 						} catch (IOException e1) {
 							e1.printStackTrace();
+							result[1]++;
 						}
 					}
 					nextNum.setSelection(maxnr + 1);
+					result[2] = maxnr + 1;
 				}
 			};
 			BusyIndicator.showWhile(getShell().getDisplay(), r);
+			// On macOS the first rows can end up hidden behind the header
+			if(existingSamples.getItemCount() > 0) existingSamples.setTopIndex(0);
+			if(update != null) update.setEnabled(true);
+			String status = "Found " + (result[0] - result[1]) + " samples on the MC-909. Next number after the last sample: " + result[2] + ".";
+			if(result[1] > 0) setMessage(status + " " + result[1] + (result[1] == 1 ? " file" : " files") + " couldn't be read.\n" + INSTRUCTIONS, IMessageProvider.WARNING);
+			else setMessage(status + "\n" + INSTRUCTIONS, IMessageProvider.INFORMATION);
+		}
+		else{
+			setErrorMessage("No MC-909 sample folder found at " + path + SMPL_FOLDER + ". Is the MC-909 in USB storage mode, and does the destination point to its drive?");
 		}
 		directory.setText(exportPath);
 		ConfigManager.getDefault().getPrefStore().setValue("mc909_sample_export", exportPath);
