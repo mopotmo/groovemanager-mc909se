@@ -134,6 +134,14 @@ public class InfoGroup{
 		fd.top = fd.left = new FormAttachment(0,0);
 		fd.right = fd.bottom = new FormAttachment(100,0);
 		group.setLayoutData(fd);
+		// On macOS the client area of a Group shrinks after its first layout
+		// (when the title is laid out) without a Resize event, so the rows
+		// would extend beyond its bottom. Lay it out again once it is shown.
+		Display.getCurrent().asyncExec(new Runnable() {
+			public void run() {
+				if(!group.isDisposed()) group.layout(true);
+			}
+		});
 		
 		close.addSelectionListener(new SelectionListener(){
 

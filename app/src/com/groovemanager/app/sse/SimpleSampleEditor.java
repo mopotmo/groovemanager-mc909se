@@ -858,14 +858,25 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			}
 		});
 		
-		DropTarget target = new DropTarget(getShell(), DND.DROP_LINK | DND.DROP_DEFAULT);
-		target.setTransfer(new Transfer[]{FileTransfer.getInstance()});
-		target.addDropListener(new DropTargetListener() {
+		// The macOS Finder offers copying instead of linking, and the drop
+		// target must be on the controls under the mouse, not only the shell
+		DropTargetListener dropListener = new DropTargetListener() {
+			/**
+			 * Choose an operation the drag source supports
+			 */
+			private void chooseOperation(DropTargetEvent event){
+				if(event.detail == DND.DROP_LINK || event.detail == DND.DROP_COPY) return;
+				if((event.operations & DND.DROP_LINK) != 0) event.detail = DND.DROP_LINK;
+				else if((event.operations & DND.DROP_COPY) != 0) event.detail = DND.DROP_COPY;
+				else event.detail = DND.DROP_NONE;
+			}
 			public void dragEnter(DropTargetEvent event) {
+				chooseOperation(event);
 			}
 			public void dragLeave(DropTargetEvent event) {
 			}
 			public void dragOperationChanged(DropTargetEvent event) {
+				chooseOperation(event);
 			}
 			public void dragOver(DropTargetEvent event) {
 			}
@@ -880,7 +891,13 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			}
 			public void dropAccept(DropTargetEvent event) {
 			}
-		});
+		};
+		Control[] dropControls = new Control[]{getShell(), mainContent};
+		for (int i = 0; i < dropControls.length; i++) {
+			DropTarget target = new DropTarget(dropControls[i], DND.DROP_LINK | DND.DROP_COPY | DND.DROP_DEFAULT);
+			target.setTransfer(new Transfer[]{FileTransfer.getInstance()});
+			target.addDropListener(dropListener);
+		}
 		
 		setShells(getShell());
 		
