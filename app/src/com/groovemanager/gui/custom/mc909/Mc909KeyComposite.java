@@ -186,7 +186,7 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 		GridData gd;
 		NumCanvas[] nums = new NumCanvas[4];
 		for(int i = 0; i < nums.length; i++){
-			gd = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+			gd = new GridData(GridData.FILL_HORIZONTAL);
 			nums[i] = new NumCanvas(comp, 1 + 4 * (i % 4));
 			nums[i].getComposite().setLayoutData(gd);
 		}
@@ -458,7 +458,7 @@ public class Mc909KeyComposite extends CustomComposite implements MIDIListener, 
 			
 			GridData gd;
 			for(int i = 0; i < 4; i++){
-				gd = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+				gd = new GridData(GridData.FILL_HORIZONTAL);
 				labels[i] = new Label(c, SWT.CENTER);
 				labels[i].setLayoutData(gd);
 				labels[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));

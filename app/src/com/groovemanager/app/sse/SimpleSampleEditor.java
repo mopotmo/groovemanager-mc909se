@@ -44,6 +44,7 @@ import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -545,6 +546,9 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * @return The style to be used for the right bar
 	 */
 	protected int getRightBarStyle(){
+		// On macOS a bordered Composite shifts its children upwards, which
+		// hides the play button
+		if(SWT.getPlatform().equals("cocoa")) return SWT.NONE;
 		return SWT.BORDER;
 	}
 	/**
@@ -668,6 +672,24 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		fd.right = new FormAttachment(100, 0);
 		fd.height = -1;
 		transportBar.getComposite().setLayoutData(fd);
+	}
+	/**
+	 * Make the window high enough for the transport bar and the zoom buttons
+	 * of the right bar. Buttons on current platforms are taller than in 2004,
+	 * and both groups would overlap otherwise.
+	 * @see org.eclipse.jface.window.Window#getInitialSize()
+	 */
+	protected Point getInitialSize() {
+		Point size = super.getInitialSize();
+		int rightBarHeight = 0;
+		Control[] children = rightBar.getChildren();
+		for (int i = 0; i < children.length; i++) {
+			rightBarHeight += children[i].computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+		}
+		int trimHeight = size.y - mainContent.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+		int minHeight = trimHeight + controlBar.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + rightBarHeight;
+		getShell().setMinimumSize(Math.min(size.x, 640), minHeight);
+		return new Point(Math.max(size.x, 1000), Math.max(size.y, minHeight));
 	}
 	/**
 	 * 

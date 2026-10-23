@@ -4,10 +4,11 @@
  */
 package com.groovemanager.gui.custom;
 
-import java.util.HashMap;
 import java.util.Iterator;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseEvent;
@@ -20,6 +21,7 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
@@ -53,21 +55,30 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 */
 	protected Canvas comp;
 	/**
-	 * Different Graphic Context Objects used for different drawing operations
+	 * Colors used for the different drawing elements
 	 */
-	protected GC markerGC, selectionGC, positionGC, channelBgGC, channelFgGC, waveGC, backgroundGC;
+	protected Color selectionColor, positionColor, channelBackgroundColor, middleLineColor, waveColor, backgroundColor;
 	/**
-	 * Map of all drawed Markers as DrawedRectangle instances
+	 * Off-screen image holding the background, the waveform and the middle
+	 * lines. It is only rendered again after redraw() has been called or the
+	 * size has changed. Position, selection and markers are painted on top of
+	 * it in every paint event.
 	 */
-	protected HashMap drawedMarkers = new HashMap();
+	protected Image contentBuffer;
 	/**
-	 * DrawedRectangle for the drawed selection
+	 * Tells whether the contentBuffer is up to date
 	 */
-	protected DrawedRectangle drawedSelection,
+	protected boolean contentValid = false;
 	/**
-	 * DrawedRectangle for the Position pointer 
+	 * true while the contentBuffer is being rendered
 	 */
-	drawedPosition;
+	protected boolean renderingContent = false;
+	/**
+	 * The GC to draw with. Only set during a paint event, because drawing on
+	 * a Control outside of paint events (and XOR drawing) is not supported on
+	 * current platforms (macOS, GTK3).
+	 */
+	protected GC currentGC;
 	/**
 	 * If this variable is false, selection events coming from the scrollbar
 	 * will be ignored
@@ -132,22 +143,14 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		});
 		comp.addPaintListener(new PaintListener(){
 			public void paintControl(PaintEvent e) {
-				redraw();
+				paint(e.gc);
 			}
 		});
-		markerGC = new GC(comp);
-		markerGC.setXORMode(true);
-		selectionGC = new GC(comp);
-		selectionGC.setXORMode(true);
-		drawedSelection = new DrawedRectangle(new Rectangle(leftOffset, topOffset, 0, getUsableDisplayHeight()), selectionGC);
-		positionGC = new GC(comp);
-		positionGC.setXORMode(true);
-		drawedPosition = new DrawedRectangle(new Rectangle(leftOffset, topOffset, 1, getUsableDisplayHeight()), positionGC);
-		channelBgGC = new GC(comp);
-		channelFgGC = new GC(comp);
-		channelFgGC.setXORMode(true);
-		waveGC = new GC(comp);
-		backgroundGC = new GC(comp);
+		comp.addDisposeListener(new DisposeListener() {
+			public void widgetDisposed(DisposeEvent e) {
+				if(contentBuffer != null) contentBuffer.dispose();
+			}
+		});
 		initColors();
 		
 		addMouseListeners(comp);
@@ -239,13 +242,75 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		Display d = comp.getDisplay();
 		markerColor = d.getSystemColor(SWT.COLOR_GREEN);
 		markerHighlightColor = d.getSystemColor(SWT.COLOR_DARK_MAGENTA);
-		markerGC.setBackground(markerColor);
-		selectionGC.setBackground(d.getSystemColor(SWT.COLOR_BLUE));
-		positionGC.setBackground(d.getSystemColor(SWT.COLOR_GRAY));
-		channelBgGC.setBackground(d.getSystemColor(SWT.COLOR_DARK_RED));
-		channelFgGC.setForeground(d.getSystemColor(SWT.COLOR_RED));
-		waveGC.setForeground(d.getSystemColor(SWT.COLOR_YELLOW));
-		backgroundGC.setBackground(d.getSystemColor(SWT.COLOR_GRAY));
+		selectionColor = d.getSystemColor(SWT.COLOR_BLUE);
+		positionColor = d.getSystemColor(SWT.COLOR_GRAY);
+		channelBackgroundColor = d.getSystemColor(SWT.COLOR_DARK_RED);
+		middleLineColor = d.getSystemColor(SWT.COLOR_RED);
+		waveColor = d.getSystemColor(SWT.COLOR_YELLOW);
+		backgroundColor = d.getSystemColor(SWT.COLOR_GRAY);
+	}
+	/**
+	 * Paint this display: render the contentBuffer if needed, copy it to the
+	 * screen and paint position, selection and markers on top of it
+	 * @param gc The GC of the paint event
+	 */
+	protected void paint(GC gc){
+		Rectangle area = comp.getClientArea();
+		if(area.width <= 0 || area.height <= 0) return;
+		if(contentBuffer != null){
+			Rectangle bounds = contentBuffer.getBounds();
+			if(bounds.width != area.width || bounds.height != area.height){
+				contentBuffer.dispose();
+				contentBuffer = null;
+			}
+		}
+		if(contentBuffer == null){
+			contentBuffer = new Image(comp.getDisplay(), area.width, area.height);
+			contentValid = false;
+		}
+		if(!contentValid){
+			GC bufferGC = new GC(contentBuffer);
+			currentGC = bufferGC;
+			renderingContent = true;
+			try{
+				super.redraw();
+			}
+			finally{
+				renderingContent = false;
+				currentGC = null;
+				bufferGC.dispose();
+			}
+			contentValid = true;
+		}
+		gc.drawImage(contentBuffer, 0, 0);
+		if(getUsableDisplayHeight() <= 0 || getUsableDisplayWidth() <= 0) return;
+		currentGC = gc;
+		try{
+			drawGlobalForeground(leftOffset, topOffset, getUsableDisplayWidth(), getUsableDisplayHeight());
+		}
+		finally{
+			currentGC = null;
+		}
+	}
+	/**
+	 * Request a paint event for this display. May be called from any thread.
+	 */
+	protected void requestPaint(){
+		if(comp.isDisposed()) return;
+		Display d = comp.getDisplay();
+		if(d.getThread() == Thread.currentThread()) comp.redraw();
+		else d.asyncExec(new Runnable() {
+			public void run() {
+				if(!comp.isDisposed()) comp.redraw();
+			}
+		});
+	}
+	/**
+	 * Fill a rectangle with the given color using the current GC
+	 */
+	private void fill(Color c, int x, int y, int width, int height){
+		currentGC.setBackground(c);
+		currentGC.fillRectangle(x, y, width, height);
 	}
 	/**
 	 * Change the Color used for drawing markers
@@ -253,7 +318,7 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 */
 	public void setMarkerColor(Color c){
 		markerColor = c;
-		redraw();
+		requestPaint();
 	}
 	/**
 	 * Change the Color used for drawing highlighted markers
@@ -261,30 +326,30 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 */
 	public void setHighlightedMarkerColor(Color c){
 		markerHighlightColor = c;
-		redraw();
+		requestPaint();
 	}
 	/**
 	 * Set the Color for drawing the selection
 	 * @param c The new selection Color
 	 */
 	public void setSelectionColor(Color c){
-		selectionGC.setBackground(c);
-		redraw();
+		selectionColor = c;
+		requestPaint();
 	}
 	/**
 	 * Set the color used for drawing the position pointer
 	 * @param c The Color for the position pointer
 	 */
 	public void setPositionColor(Color c){
-		positionGC.setBackground(c);
-		redraw();
+		positionColor = c;
+		requestPaint();
 	}
 	/**
 	 * Set the background color used for each channel
 	 * @param c The new channel background color
 	 */
 	public void setChannelBackgroundColor(Color c){
-		channelBgGC.setBackground(c);
+		channelBackgroundColor = c;
 		redraw();
 	}
 	/**
@@ -292,7 +357,7 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 * @param c The middle line´s color
 	 */
 	public void setMiddleLineColor(Color c){
-		channelFgGC.setBackground(c);
+		middleLineColor = c;
 		redraw();
 	}
 	/**
@@ -300,62 +365,59 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 * @param c The waveform´s color
 	 */
 	public void setWaveColor(Color c){
-		waveGC.setForeground(c);
+		waveColor = c;
 		redraw();
 	}
-	public void addMarker(Marker m) {
-		DrawedRectangle d = new DrawedRectangle(markerGC);
-		drawedMarkers.put(m, d);
-		super.addMarker(m);
-	}
-	protected void removeMarker(Marker m) {
-		super.removeMarker(m);
-		drawedMarkers.remove(m);
-	}
+	// Position, selection and markers are painted from the current state in
+	// every paint event, so the draw/erase methods only request a new paint
+	// when they are called outside of it.
 	protected void drawHighlightedMarker(Marker m) {
-		DrawedRectangle d = (DrawedRectangle)drawedMarkers.get(m);
-		d.gc.setBackground(markerHighlightColor);
-		d.setTo(leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
-		d.draw();
+		if(currentGC == null) requestPaint();
+		else fill(markerHighlightColor, leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
 	}
 	protected void eraseHighlightedMarker(Marker m) {
-		DrawedRectangle d = (DrawedRectangle)drawedMarkers.get(m);
-		d.gc.setBackground(markerHighlightColor);
-		d.erase();
+		if(currentGC == null) requestPaint();
 	}
 	protected void drawMarker(Marker m) {
-		DrawedRectangle d = (DrawedRectangle)drawedMarkers.get(m);
-		d.gc.setBackground(markerColor);
-		d.setTo(leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
-		d.draw();
+		if(currentGC == null) requestPaint();
+		else fill(markerColor, leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
 	}
 	protected void eraseMarker(Marker m) {
-		DrawedRectangle d = (DrawedRectangle)drawedMarkers.get(m);
-		d.gc.setBackground(markerColor);
-		d.erase();
+		if(currentGC == null) requestPaint();
 	}
 	protected void drawSelection(int x, int y, int width, int height) {
-		drawedSelection.setTo(x, y, width, height);
-		drawedSelection.draw();
+		if(currentGC == null) requestPaint();
+		else if(width > 0){
+			currentGC.setAlpha(96);
+			fill(selectionColor, x, y, width, height);
+			currentGC.setAlpha(255);
+		}
 	}
 	protected void eraseSelection() {
-		drawedSelection.erase();
+		if(currentGC == null) requestPaint();
 	}
 	protected void drawPosition(int x, int y, int height) {
-		drawedPosition.setTo(x - 1, y, 2, height);
-		drawedPosition.draw();
+		if(currentGC == null) requestPaint();
+		else fill(positionColor, x - 1, y, 2, height);
 	}
 	protected void erasePosition() {
-		drawedPosition.erase();
+		if(currentGC == null) requestPaint();
 	}
 	protected void drawGlobalBackground(int x, int y, int width, int height) {
-		backgroundGC.fillRectangle(x, y, width, height);
+		if(currentGC != null) fill(backgroundColor, x, y, width, height);
 	}
 	protected void drawChannelBackground(int x, int y, int width, int height) {
-		if(gradient) channelBgGC.fillGradientRectangle(x, y, width, height, true);
-		else channelBgGC.fillRectangle(x, y, width, height);
+		if(currentGC == null) return;
+		if(gradient){
+			currentGC.setForeground(comp.getForeground());
+			currentGC.setBackground(channelBackgroundColor);
+			currentGC.fillGradientRectangle(x, y, width, height, true);
+		}
+		else fill(channelBackgroundColor, x, y, width, height);
 	}
 	protected void drawGlobalForeground(int x, int y, int width, int height) {
+		// painted on top of the contentBuffer in paint()
+		if(renderingContent) return;
 		drawPosition(x + dataToPixel(pos), y, height);
 		int leftPixel = dataToPixel(left);
 		drawSelection(x + leftPixel, y, dataToPixel(right) - leftPixel, height);
@@ -366,10 +428,14 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		}
 	}
 	protected void drawChannelForeground(int x, int y, int width, int height) {
-		channelFgGC.drawLine(x, y + height / 2, x + width, y + height / 2);
+		if(currentGC == null) return;
+		currentGC.setForeground(middleLineColor);
+		currentGC.drawLine(x, y + height / 2, x + width, y + height / 2);
 	}
 	protected void drawWaveLine(int x, int y, int x2, int y2) {
-		waveGC.drawLine(x, y, x2, y2);
+		if(currentGC == null) return;
+		currentGC.setForeground(waveColor);
+		currentGC.drawLine(x, y, x2, y2);
 	}
 	protected int getDisplayWidth() {
 		return comp.getClientArea().width;
@@ -378,17 +444,17 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		return comp.getClientArea().height;
 	}
 	protected void redrawSelection(int x, int y, int width, int height) {
-		drawedSelection.setTo(x, y, width, height);
-		drawedSelection.draw();
+		if(currentGC == null) requestPaint();
+		else drawSelection(x, y, width, height);
 	}
+	/**
+	 * Invalidate the rendered waveform and request a new paint. The actual
+	 * drawing happens in the next paint event.
+	 */
 	public synchronized void redraw() {
-		drawedPosition.setErased(true);
-		drawedSelection.setErased(true);
-		for (Iterator iter = drawedMarkers.keySet().iterator(); iter.hasNext();) {
-			DrawedRectangle element = (DrawedRectangle) drawedMarkers.get(iter.next());
-			element.setErased(true);			
-		}
-		super.redraw();
+		contentValid = false;
+		requestPaint();
+		if(comp.isDisposed() || comp.getDisplay().getThread() != Thread.currentThread()) return;
 		ScrollBar b = comp.getHorizontalBar();
 		if(b != null){
 			if(zoomFactor <= 1.0){
