@@ -1,12 +1,20 @@
 # Builds the native installers with jpackage on each platform. On a tag
 # v<version> they are attached to the GitHub release of that tag; a manual run
 # only uploads them as workflow artifacts.
+#
+# The Windows installer upgrades an installed version with the same upgrade
+# UUID (see build.gradle.kts) if its version is higher. Installing the same
+# version from a different build fails, so give test builds their own version.
 name: Installers
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for a test build. The Windows installer only replaces an installed version with a lower number."
+        default: "1.1.0"
 
 permissions:
   contents: write
@@ -48,7 +56,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=1.1.0" >> "$GITHUB_OUTPUT"
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build installer
