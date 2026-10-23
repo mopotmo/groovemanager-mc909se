@@ -93,7 +93,15 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	/**
 	 * Draw rounded corners and a smoothed waveform?
 	 */
-	soft;
+	soft,
+	/**
+	 * Draw the markers opaque for a high contrast?
+	 */
+	highContrast;
+	/**
+	 * Width of the markers in pixels
+	 */
+	protected int markerWidth = 1;
 	/**
 	 * Opacity of the middle line in the smoothed look
 	 */
@@ -324,6 +332,22 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		requestPaint();
 	}
 	/**
+	 * Draw the markers opaque, also in the smoothed look
+	 * @param highContrast true for opaque markers
+	 */
+	public void setHighContrast(boolean highContrast){
+		this.highContrast = highContrast;
+		requestPaint();
+	}
+	/**
+	 * Set the width of the markers
+	 * @param width The width in pixels
+	 */
+	public void setMarkerWidth(int width){
+		markerWidth = width;
+		requestPaint();
+	}
+	/**
 	 * Request a paint event for this display. May be called from any thread.
 	 */
 	protected void requestPaint(){
@@ -414,7 +438,7 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	// when they are called outside of it.
 	protected void drawHighlightedMarker(Marker m) {
 		if(currentGC == null) requestPaint();
-		else fill(markerHighlightColor, leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
+		else fill(markerHighlightColor, leftOffset + dataToPixel(m.getPosition()) - (markerWidth - 1) / 2, topOffset, markerWidth, getUsableDisplayHeight());
 	}
 	protected void eraseHighlightedMarker(Marker m) {
 		if(currentGC == null) requestPaint();
@@ -424,8 +448,8 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		else{
 			// in the smoothed look the slices don't cover the waveform; the
 			// selected marker stays opaque, so that it stands out
-			if(soft) currentGC.setAlpha(MARKER_ALPHA);
-			fill(markerColor, leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
+			if(soft && !highContrast) currentGC.setAlpha(MARKER_ALPHA);
+			fill(markerColor, leftOffset + dataToPixel(m.getPosition()) - (markerWidth - 1) / 2, topOffset, markerWidth, getUsableDisplayHeight());
 			currentGC.setAlpha(255);
 		}
 	}

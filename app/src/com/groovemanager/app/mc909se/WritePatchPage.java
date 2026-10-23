@@ -15,11 +15,11 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
 import com.groovemanager.core.FileManager;
+import com.groovemanager.gui.custom.ThemeButton;
 
 /**
  * This class represents a wizard page that is displayed to the user to tell him
@@ -74,7 +74,7 @@ public class WritePatchPage extends WizardPage {
 		gd.widthHint = writeImg.getBounds().width;
 		write.setLayoutData(gd);
 		
-		final Button retry = new Button(comp, SWT.PUSH);
+		final ThemeButton retry = new ThemeButton(comp);
 		retry.setText("Send again");
 		retry.setToolTipText("Send the patch to the MC-909 again, e.g. after a MIDI problem");
 		retry.addSelectionListener(new SelectionAdapter() {

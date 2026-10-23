@@ -9,7 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.eclipse.swt.widgets.Combo;
+import com.groovemanager.gui.custom.ThemeCombo;
 
 /**
  * Reads the names of the patches and rhythm sets in the card bank of the
@@ -81,7 +81,7 @@ public class Mc909SoundFile {
 	 * @param names The names of the slots or null if unknown
 	 * @param emptyName The name of an empty slot
 	 */
-	public static void fillCombo(Combo combo, int count, String[] names, String emptyName){
+	public static void fillCombo(ThemeCombo combo, int count, String[] names, String emptyName){
 		int selection = Math.max(combo.getSelectionIndex(), 0);
 		combo.removeAll();
 		int firstEmpty = -1;

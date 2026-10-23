@@ -47,8 +47,8 @@ import com.groovemanager.app.sse.WaveTab;
 import com.groovemanager.core.FileManager;
 import com.groovemanager.exception.NotFinishedException;
 import com.groovemanager.gui.Spacing;
-import com.groovemanager.gui.custom.Frames;
 import com.groovemanager.gui.custom.KeyboardKeyListener;
+import com.groovemanager.gui.custom.Section;
 import com.groovemanager.gui.custom.ThemeButton;
 import com.groovemanager.gui.custom.ThemeCombo;
 import com.groovemanager.gui.custom.ThemeText;
@@ -303,14 +303,34 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			comp.setLayout(layout);
 			FormData fd;
 			
-			// Export Rhythm set button
-			exportRS = new ThemeButton(comp);
-			exportRS.setText("Export Rhythm set");
+			// MC-909 section with the export buttons
+			Section exportSection = new Section(comp, "MC-909", false);
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
 			fd.height = -1;
 			fd.bottom = fd.right = new FormAttachment(100, 0);
-			exportRS.setLayoutData(fd);
+			exportSection.setLayoutData(fd);
+			Composite exportComp = new Composite(exportSection, SWT.NONE);
+			GridLayout gl = Spacing.grid(1);
+			gl.verticalSpacing = Spacing.BUTTON;
+			exportComp.setLayout(gl);
+			
+			// Import / Export button
+			imExport = new ThemeButton(exportComp);
+			imExport.setText("Import / Export");
+			imExport.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			imExport.addSelectionListener(new SelectionListener() {
+				public void widgetSelected(SelectionEvent e) {
+					export();
+				}
+				public void widgetDefaultSelected(SelectionEvent e) {
+				}
+			});
+			
+			// Export Rhythm set button
+			exportRS = new ThemeButton(exportComp);
+			exportRS.setText("Export Rhythm set");
+			exportRS.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			exportRS.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					exportRS();
@@ -320,46 +340,26 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			});
 			exportRS.setEnabled(false);
 			
-			// Import / Export button
-			imExport = new ThemeButton(comp);
-			imExport.setText("Import / Export");
-			fd = new FormData();
-			fd.left = new FormAttachment(0, 0);
-			fd.height = -1;
-			fd.right = new FormAttachment(100, 0);
-			fd.bottom = new FormAttachment(exportRS, 0, SWT.TOP);
-			imExport.setLayoutData(fd);
-			imExport.addSelectionListener(new SelectionListener() {
-				public void widgetSelected(SelectionEvent e) {
-					export();
-				}
-				public void widgetDefaultSelected(SelectionEvent e) {
-				}
-			});
-			
 			// Properties
-			propertiesComp = new Composite(comp, SWT.NONE);
-			Frames.add(propertiesComp);
-			stack.marginWidth = stack.marginHeight = Frames.INSET;
+			Section propertiesSection = new Section(comp, "Properties", true);
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
 			fd.height = -1;
 			fd.right = new FormAttachment(100, 0);
-			fd.bottom = new FormAttachment(imExport, 0, SWT.TOP);
-			propertiesComp.setLayoutData(fd);
+			fd.bottom = new FormAttachment(exportSection, 0, SWT.TOP);
+			propertiesSection.setLayoutData(fd);
+			propertiesComp = new Composite(propertiesSection, SWT.NONE);
 			propertiesComp.setLayout(stack);
 			
 			// File list
-			fileListComp = new Composite(comp, SWT.NONE);
-			Frames.add(fileListComp);
+			Section fileListSection = new Section(comp, "Samples", true);
 			fd = new FormData();
 			fd.top = fd.left = new FormAttachment(0, 0);
 			fd.right = new FormAttachment(100, 0);
-			fd.bottom = new FormAttachment(propertiesComp, 0);
-			fileListComp.setLayoutData(fd);
-			FillLayout fl = new FillLayout();
-			fl.marginWidth = fl.marginHeight = Frames.INSET;
-			fileListComp.setLayout(fl);
+			fd.bottom = new FormAttachment(propertiesSection, 0);
+			fileListSection.setLayoutData(fd);
+			fileListComp = new Composite(fileListSection, SWT.NONE);
+			fileListComp.setLayout(new FillLayout());
 			fileList = new List(fileListComp, SWT.SINGLE);
 			sListener = new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {

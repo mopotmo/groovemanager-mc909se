@@ -9,6 +9,8 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -28,6 +30,7 @@ import org.eclipse.swt.widgets.Widget;
 
 import com.groovemanager.core.ConfigManager;
 import com.groovemanager.core.Log;
+import com.groovemanager.gui.custom.ButtonOverlay;
 
 /**
  * The ThemeManager holds the current Theme, which is stored in the
@@ -42,6 +45,10 @@ public class ThemeManager implements IPropertyChangeListener{
 	 * The preference key for the id of the selected theme
 	 */
 	public final static String PREF_KEY = "gui_theme";
+	/**
+	 * The preference key for the high contrast waveforms
+	 */
+	public final static String PREF_HIGH_CONTRAST = "gui_high_contrast";
 	/**
 	 * The default instance
 	 */
@@ -60,11 +67,16 @@ public class ThemeManager implements IPropertyChangeListener{
 	 */
 	protected final static String THEMED_SHELL = "com.groovemanager.gui.theme.themedShell";
 	/**
+	 * Key of the Shell data marking a pending inheritPanel() call
+	 */
+	protected final static String INHERIT_SCHEDULED = "com.groovemanager.gui.theme.inheritScheduled";
+	/**
 	 * Construct a new ThemeManager using the theme from the default
 	 * ConfigManager
 	 */
 	protected ThemeManager(){
 		ConfigManager.getDefault().getPrefStore().setDefault(PREF_KEY, Theme.MC909.getId());
+		ConfigManager.getDefault().getPrefStore().setDefault(PREF_HIGH_CONTRAST, false);
 		ConfigManager.getDefault().getPrefStore().addPropertyChangeListener(this);
 		theme = Theme.forId(ConfigManager.getDefault().getPrefStore().getString(PREF_KEY));
 		Display d = Display.getDefault();
@@ -72,8 +84,11 @@ public class ThemeManager implements IPropertyChangeListener{
 		// sent for every new widget and on reskin()
 		d.addListener(SWT.Skin, new Listener() {
 			public void handleEvent(Event e) {
-				if(e.widget instanceof Label) skinLabel((Label)e.widget);
-				else if(e.widget instanceof List) skinList((List)e.widget);
+				if(e.widget instanceof Shell) skinShell((Shell)e.widget);
+				else if(e.widget instanceof Label) skinLabel((Label)e.widget);
+				else if(e.widget instanceof List || e.widget instanceof Table || e.widget instanceof Tree) skinList((Control)e.widget);
+				else if(e.widget instanceof Button) skinButton((Button)e.widget);
+				if(e.widget instanceof Composite) scheduleInheritPanel(((Composite)e.widget).getShell());
 			}
 		});
 	}
@@ -88,9 +103,85 @@ public class ThemeManager implements IPropertyChangeListener{
 		addThemeListener(shell, new ThemeListener() {
 			public void applyTheme(Theme theme) {
 				shell.setBackground(theme.getPanelBackground());
+				if(shell.getParent() != null && theme.getPanelBackground() != null) inheritPanel(shell, theme.getPanelBackground());
 				shell.reskin(SWT.ALL);
 			}
 		});
+	}
+	/**
+	 * Let the areas of a themed dialog take the panel color once its
+	 * contents are created. JFace sets the background of a title area
+	 * dialog while creating it, after the dialog Shell was skinned.
+	 * @param shell The Shell of a new Composite
+	 */
+	protected void scheduleInheritPanel(final Shell shell){
+		if(shell.getParent() == null || shell.getData(THEMED_SHELL) == null || shell.getData(INHERIT_SCHEDULED) != null) return;
+		shell.setData(INHERIT_SCHEDULED, Boolean.TRUE);
+		shell.getDisplay().asyncExec(new Runnable() {
+			public void run() {
+				if(shell.isDisposed()) return;
+				shell.setData(INHERIT_SCHEDULED, null);
+				if(theme.getPanelBackground() != null) inheritPanel(shell, theme.getPanelBackground());
+			}
+		});
+	}
+	/**
+	 * Let the areas of a dialog take the panel color of the theme. JFace
+	 * gives its title area dialogs (including wizards) the white banner
+	 * color as background of the whole dialog, so it is taken back. Custom
+	 * drawn widgets and input fields keep their colors.
+	 * @param c The control to start with
+	 * @param panel The panel color
+	 */
+	protected void inheritPanel(Control c, Color panel){
+		// a Shell is a Canvas too
+		if(c instanceof Canvas && !(c instanceof Shell)) return;
+		if(c instanceof List || c instanceof Table || c instanceof Tree || c instanceof Combo) return;
+		if(c instanceof Text){
+			// read-only texts like the message of a title area are labels
+			if((c.getStyle() & SWT.READ_ONLY) != 0 && (c.getStyle() & SWT.BORDER) == 0) c.setBackground(panel);
+			else if(theme.getInputBackground() != null){
+				c.setBackground(theme.getInputBackground());
+				c.setForeground(theme.getInputForeground());
+			}
+			return;
+		}
+		// Composites get the panel color explicitly, as the contents of a
+		// ScrolledComposite (like the preference pages) don't inherit it.
+		// The drawn widgets of this application paint themselves.
+		if(c != c.getShell() && !c.getClass().getName().startsWith("com.groovemanager.")) c.setBackground(c instanceof Composite ? panel : null);
+		if(c instanceof Composite){
+			Control[] children = ((Composite)c).getChildren();
+			for (int i = 0; i < children.length; i++) {
+				inheritPanel(children[i], panel);
+			}
+		}
+	}
+	/**
+	 * Let dialogs follow the theme like the window they belong to
+	 * @param shell A new Shell
+	 */
+	protected void skinShell(final Shell shell){
+		if(shell.isDisposed() || shell.getData(THEMED_SHELL) != null) return;
+		Shell parent = (Shell)shell.getParent();
+		if(parent == null || parent.getData(THEMED_SHELL) == null) return;
+		addShell(shell);
+		// the contents exist when the dialog is opened
+		shell.addListener(SWT.Show, new Listener() {
+			public void handleEvent(Event e) {
+				scheduleInheritPanel(shell);
+			}
+		});
+	}
+	/**
+	 * Show the push buttons of themed dialogs as drawn buttons in themes
+	 * with device buttons. The main windows use ThemeButtons themselves.
+	 * @param b The button
+	 */
+	protected void skinButton(Button b){
+		if(b.isDisposed() || b.getShell().getParent() == null) return;
+		if(b.getShell().getData(THEMED_SHELL) == null) return;
+		ButtonOverlay.add(b);
 	}
 	/**
 	 * Apply the theme´s text color to a label of a themed Shell. Labels on
@@ -103,10 +194,10 @@ public class ThemeManager implements IPropertyChangeListener{
 		l.setForeground(theme.getPanelForeground());
 	}
 	/**
-	 * Apply the theme´s input colors to a list of a themed Shell
-	 * @param l The list
+	 * Apply the theme´s input colors to a list or table of a themed Shell
+	 * @param l The list or table
 	 */
-	protected void skinList(List l){
+	protected void skinList(Control l){
 		if(l.isDisposed() || l.getShell().getData(THEMED_SHELL) == null) return;
 		l.setBackground(theme.getInputBackground());
 		l.setForeground(theme.getInputForeground());
@@ -159,7 +250,7 @@ public class ThemeManager implements IPropertyChangeListener{
 			c.setBackground(null);
 			c.setForeground(null);
 		}
-		if(c instanceof List) skinList((List)c);
+		if(c instanceof List || c instanceof Table || c instanceof Tree) skinList(c);
 		// SWT on macOS stores the text color of the old appearance in the
 		// tab titles, setting the titles again uses the new one
 		if(c instanceof TabFolder){
@@ -195,6 +286,13 @@ public class ThemeManager implements IPropertyChangeListener{
 		return theme;
 	}
 	/**
+	 * Tells whether the waveforms should be drawn with a high contrast
+	 * @return true for high contrast waveforms
+	 */
+	public boolean isHighContrast(){
+		return ConfigManager.getDefault().getPrefStore().getBoolean(PREF_HIGH_CONTRAST);
+	}
+	/**
 	 * Change the current theme and notify all ThemeListeners
 	 * @param newTheme The new theme
 	 */
@@ -208,6 +306,14 @@ public class ThemeManager implements IPropertyChangeListener{
 		for (int i = 0; i < shells.length; i++) {
 			resetDefaultColors(shells[i]);
 		}
+		notifyListeners(shells);
+	}
+	/**
+	 * Apply the current theme again to all ThemeListeners, e.g. after the
+	 * high contrast setting changed
+	 * @param shells The Shells to layout and redraw afterwards
+	 */
+	protected void notifyListeners(Shell[] shells){
 		ArrayList copy = new ArrayList(listeners);
 		for (Iterator iter = copy.iterator(); iter.hasNext();) {
 			ThemeListener l = (ThemeListener) iter.next();
@@ -253,6 +359,17 @@ public class ThemeManager implements IPropertyChangeListener{
 	 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
 	 */
 	public void propertyChange(PropertyChangeEvent event) {
+		if(event.getProperty().equals(PREF_HIGH_CONTRAST)){
+			final Display d = Display.getDefault();
+			Runnable r = new Runnable() {
+				public void run() {
+					notifyListeners(d.getShells());
+				}
+			};
+			if(d.getThread() == Thread.currentThread()) r.run();
+			else d.asyncExec(r);
+			return;
+		}
 		if(!event.getProperty().equals(PREF_KEY)) return;
 		final Theme t = Theme.forId(String.valueOf(event.getNewValue()));
 		Display d = Display.getDefault();

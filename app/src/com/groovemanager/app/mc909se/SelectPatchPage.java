@@ -11,9 +11,9 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+import com.groovemanager.gui.custom.ThemeCombo;
 
 /**
  * This class is used in the CreatePatchWizard as first page 
@@ -24,7 +24,7 @@ public class SelectPatchPage extends WizardPage {
 	/**
 	 * Popup for selection of the part
 	 */
-	Combo partSelect,
+	ThemeCombo partSelect,
 	/**
 	 * Popup for selection of the bank
 	 */
@@ -75,7 +75,7 @@ public class SelectPatchPage extends WizardPage {
 		
 		new Label(comp, SWT.NONE).setText("Part (MIDI channel)");
 		
-		partSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+		partSelect = new ThemeCombo(comp);
 		for(int i = 0; i < 16; i++){
 			partSelect.add("" + (i + 1));
 		}
@@ -91,14 +91,14 @@ public class SelectPatchPage extends WizardPage {
 		patchComp.setLayout(gl);
 		patchComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
-		bankSelect = new Combo(patchComp, SWT.READ_ONLY | SWT.DROP_DOWN);
+		bankSelect = new ThemeCombo(patchComp);
 		bankSelect.add("User");
 		bankSelect.add("Card");
 		// Prefer the card if its patches are known, so that a free slot can
 		// be suggested
 		bankSelect.select(cardPatchNames != null ? 1 : 0);
 		
-		patchSelect = new Combo(patchComp, SWT.READ_ONLY | SWT.DROP_DOWN);
+		patchSelect = new ThemeCombo(patchComp);
 		patchSelect.add("1");
 		patchSelect.select(0);
 		

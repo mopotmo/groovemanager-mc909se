@@ -16,10 +16,10 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 import com.groovemanager.core.FileManager;
+import com.groovemanager.gui.custom.ThemeButton;
 
 /**
  * This class is used for the wizard page that is displayed at the end of 
@@ -31,7 +31,7 @@ public class PlaySequencePage extends OnlyMessagePage {
 	/**
 	 * play button
 	 */
-	Button play;
+	ThemeButton play;
 	/**
 	 * The sequence to play
 	 */
@@ -63,7 +63,7 @@ public class PlaySequencePage extends OnlyMessagePage {
 	/**
 	 * Button for sending the rhythm set again
 	 */
-	private Button retry;
+	private ThemeButton retry;
 	/**
 	 * Text to display when the play button is visible
 	 */
@@ -97,7 +97,7 @@ public class PlaySequencePage extends OnlyMessagePage {
 		super.createControl(parent);
 		Composite comp = (Composite)getControl();
 		
-		retry = new Button(comp, SWT.PUSH);
+		retry = new ThemeButton(comp);
 		retry.setText("Send again");
 		retry.setToolTipText("Send the rhythm set to the MC-909 again, e.g. after a MIDI problem");
 		retry.addSelectionListener(new SelectionListener() {
@@ -111,7 +111,7 @@ public class PlaySequencePage extends OnlyMessagePage {
 			}
 		});
 				
-		play = new Button(comp, SWT.PUSH);
+		play = new ThemeButton(comp);
 		play.setVisible(visible);
 		play.setImage(new Image(play.getDisplay(), FileManager.getDefault().getRootPath("icons/trans/play.gif")));
 		play.addSelectionListener(new SelectionListener() {

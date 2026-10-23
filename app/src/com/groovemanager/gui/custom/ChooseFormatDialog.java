@@ -14,12 +14,10 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
 
 /**
  * This class represents a dialog in which the user can select some
@@ -66,41 +64,41 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 	 * <code>showWhat & SAMPLING_RATE > 0</code> and if no possible values
 	 * for user selection of the sample rate are given.
 	 */
-	private Text sampleRateValue;
+	private ThemeText sampleRateValue;
 	/**
 	 * Text field for user input of the sample size. Will only be used, if 
 	 * <code>showWhat & SAMPLE_SIZE > 0</code> and if no possible values
 	 * for user selection of the sample size are given.
 	 */
-	private Text sampleSizeValue;
+	private ThemeText sampleSizeValue;
 	/**
 	 * Drop-Down Menu for user selection of the sample rate. Will only be
 	 * used, if <code>showWhat & SAMPLING_RATE > 0</code> and if possible
 	 * values for user selection of the sample rate are given.
 	 */
-	private Combo sampleRateSelect;
+	private ThemeCombo sampleRateSelect;
 	/**
 	 * Drop-Down Menu for user selection of the sample size. Will only be
 	 * used, if <code>showWhat & SAMPLE_SIZE > 0</code> and if possible
 	 * values for user selection of the sample size are given.
 	 */
-	private Combo sampleSizeSelect;
+	private ThemeCombo sampleSizeSelect;
 	/**
 	 * Drop-Down Menu for user selection of the encoding. Will only be
 	 * used, if <code>showWhat & ENCODING > 0</code> and if possible
 	 * values for user selection of the encoding are given.
 	 */
-	private Combo encodingSelect;
+	private ThemeCombo encodingSelect;
 	/**
 	 * Drop-Down Menu for user selection of the number of channels. Will
 	 * only be used, if <code>showWhat & CHANNELS > 0</code>.
 	 */
-	private Combo channelSelect;
+	private ThemeCombo channelSelect;
 	/**
 	 * Drop-Down Menu for user selection of the endianess. Will only be
 	 * used, if <code>showWhat & ENDIAN > 0</code>.
 	 */
-	private Combo endianSelect;
+	private ThemeCombo endianSelect;
 	/**
 	 * Current value for the sample rate of the AudioFormat
 	 */
@@ -166,15 +164,18 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 		layout.marginWidth = 15;
 		layout.marginHeight = 10;
 		layout.numColumns = 2;
-		layout.makeColumnsEqualWidth = true;
+		layout.makeColumnsEqualWidth = false;
 		comp.setLayout(layout);
+		// fill the width of the title area, so that the buttons are on the
+		// right like in the other dialogs
+		comp.setLayoutData(new GridData(GridData.FILL_BOTH));
 		GridData gd;
 		
 		// Sampling rate
 		if((showWhat & SAMPLING_RATE) > 0){
 			new Label(comp, SWT.NONE).setText("Sampling rate (Hz)");
 			if(sampleRates == null){
-				sampleRateValue = new Text(comp, SWT.SINGLE | SWT.BORDER);
+				sampleRateValue = new ThemeText(comp, SWT.SINGLE);
 				sampleRateValue.setText("" + format.getSampleRate());
 				sampleRateValue.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 				sampleRateValue.addFocusListener(new FocusListener() {
@@ -190,7 +191,7 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 				});
 			}
 			else{
-				sampleRateSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+				sampleRateSelect = new ThemeCombo(comp);
 				int sel = 0;
 				for (int i = 0; i < sampleRates.length; i++) {
 					sampleRateSelect.add(""+sampleRates[i]);
@@ -216,7 +217,7 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 		if((showWhat & SAMPLE_SIZE) > 0){
 			new Label(comp, SWT.NONE).setText("Sample size (Bit)");
 			if(sizes == null){
-				sampleSizeValue = new Text(comp, SWT.SINGLE | SWT.BORDER);
+				sampleSizeValue = new ThemeText(comp, SWT.SINGLE);
 				sampleSizeValue.setText("" + format.getSampleSizeInBits());
 				sampleSizeValue.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 				sampleSizeValue.addFocusListener(new FocusListener() {
@@ -233,7 +234,7 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 			}
 			else{
 				int sel = 0;
-				sampleSizeSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+				sampleSizeSelect = new ThemeCombo(comp);
 				for (int i = 0; i < sizes.length; i++) {
 					sampleSizeSelect.add(""+sizes[i]);
 					if(sizes[i] == format.getSampleSizeInBits()) sel = i;
@@ -257,7 +258,7 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 		// Encoding
 		if((showWhat & ENCODING) > 0 && encodings != null){
 			new Label(comp, SWT.NONE).setText("Encoding");
-			encodingSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+			encodingSelect = new ThemeCombo(comp);
 			int sel = 0;
 			for (int i = 0; i < encodings.length; i++) {
 				encodingSelect.add(""+encodings[i]);
@@ -278,7 +279,7 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 		// Channels
 		if((showWhat & CHANNELS) > 0 && maxChannels > 0){
 			new Label(comp, SWT.NONE).setText("Channels");
-			channelSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+			channelSelect = new ThemeCombo(comp);
 			for (int i = 1; i <= maxChannels; i++) {
 				channelSelect.add(""+i);
 			}
@@ -300,7 +301,7 @@ public class ChooseFormatDialog extends TitleAreaDialog {
 		// Endianess
 		if((showWhat & ENDIAN) > 0){
 			new Label(comp, SWT.NONE).setText("Endianess");
-			endianSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+			endianSelect = new ThemeCombo(comp);
 			endianSelect.add("Little endian");
 			endianSelect.add("Big endian");
 			if(format.isBigEndian()) endianSelect.select(1);

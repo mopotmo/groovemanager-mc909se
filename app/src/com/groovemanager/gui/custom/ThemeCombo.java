@@ -239,6 +239,46 @@ public class ThemeCombo extends Composite implements ThemeListener{
 		redraw();
 	}
 	/**
+	 * Remove all items
+	 */
+	public void removeAll(){
+		items.clear();
+		selection = -1;
+		if(combo != null) combo.removeAll();
+		redraw();
+	}
+	/**
+	 * Get an item
+	 * @param index The index of the item
+	 * @return The item
+	 */
+	public String getItem(int index){
+		return (String)items.get(index);
+	}
+	/**
+	 * Get the number of items
+	 * @return The number of items
+	 */
+	public int getItemCount(){
+		return items.size();
+	}
+	/**
+	 * Get the selected item
+	 * @return The selected item or an empty String, if none is selected
+	 */
+	public String getText(){
+		return selection >= 0 ? (String)items.get(selection) : "";
+	}
+	/**
+	 * Select the item with the given text, like Combo.setText() for a
+	 * read-only Combo
+	 * @param string The text of the item to select
+	 */
+	public void setText(String string){
+		int index = items.indexOf(string);
+		if(index >= 0) select(index, false);
+	}
+	/**
 	 * Notify the SelectionListeners
 	 */
 	protected void fireSelection(){

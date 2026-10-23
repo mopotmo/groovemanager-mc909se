@@ -148,6 +148,8 @@ public class Theme {
 		MC909.iconRecord = new RGB(214, 60, 70);
 		MC909.frame = new RGB(96, 108, 124);
 		MC909.softWave = true;
+		// thin red lines get lost on the light display
+		MC909.markerWidth = 2;
 		// flat buttons in the pale blue-grey of the sequencer keys
 		MC909.deviceButtons = true;
 		MC909.buttonFace = new RGB(184, 197, 218);
@@ -158,6 +160,10 @@ public class Theme {
 		// text fields, dropdowns and lists look like small LCDs
 		MC909.inputBackground = new RGB(214, 224, 242);
 		MC909.inputForeground = new RGB(33, 53, 83);
+		// sections in darker boxes with black header bars like on the device
+		MC909.sectionBackground = new RGB(156, 166, 184);
+		MC909.headerBackground = new RGB(40, 45, 54);
+		MC909.headerForeground = new RGB(236, 240, 246);
 
 		// after Roland's MC-909 Editor: deep steel blue panels with white
 		// labels, navy displays with cyan waveforms. It uses the dark native
@@ -208,6 +214,9 @@ public class Theme {
 		// navy display fields with cyan text like in the editor
 		MC909_EDITOR.inputBackground = new RGB(16, 26, 78);
 		MC909_EDITOR.inputForeground = new RGB(150, 220, 255);
+		MC909_EDITOR.sectionBackground = new RGB(42, 51, 68);
+		MC909_EDITOR.headerBackground = new RGB(20, 24, 32);
+		MC909_EDITOR.headerForeground = new RGB(236, 240, 246);
 	}
 	/**
 	 * The key under which the theme is stored in the preferences
@@ -265,6 +274,11 @@ public class Theme {
 	 */
 	RGB inputBackground, inputForeground;
 	/**
+	 * Colors of the sections (file list, properties, transport, zoom) and
+	 * their header bars, <code>null</code> for sections without header
+	 */
+	RGB sectionBackground, headerBackground, headerForeground;
+	/**
 	 * Frame around the content areas (lists, panels, waveform displays),
 	 * <code>null</code> for none
 	 */
@@ -273,6 +287,10 @@ public class Theme {
 	 * true for rounded waveform displays with a smoothed waveform
 	 */
 	boolean softWave;
+	/**
+	 * Width of the slice markers in pixels
+	 */
+	int markerWidth = 1;
 	/**
 	 * Colors already created, by RGB
 	 */
@@ -339,8 +357,10 @@ public class Theme {
 	 * @param d The WaveFormDisplay to apply the colors to
 	 */
 	public void applyWaveColors(WaveFormDisplay d){
-		d.setBackgroundColor(color(waveBackground));
-		d.setChannelBackgroundColor(color(waveChannelBackground));
+		boolean hc = ThemeManager.getDefault().isHighContrast();
+		RGB contrast = hc ? contrastBackground(wave) : null;
+		d.setBackgroundColor(color(hc ? contrast : waveBackground));
+		d.setChannelBackgroundColor(color(hc ? contrast : waveChannelBackground));
 		d.setWaveColor(color(wave));
 		d.setMiddleLineColor(color(waveMiddleLine));
 		d.setSelectionColor(color(waveSelection));
@@ -348,15 +368,18 @@ public class Theme {
 		d.setMarkerColor(color(waveMarker));
 		d.setHighlightedMarkerColor(color(waveMarkerHighlight));
 		d.setSoft(softWave);
+		d.setMarkerWidth(hc ? Math.max(2, markerWidth) : markerWidth);
+		d.setHighContrast(hc);
 	}
 	/**
 	 * Apply the colors of the overview waveform display
 	 * @param d The WaveFormDisplay to apply the colors to
 	 */
 	public void applyOverviewColors(WaveFormDisplay d){
-		Color channel = color(overviewChannelBackground);
+		boolean hc = ThemeManager.getDefault().isHighContrast();
+		Color channel = color(hc ? contrastBackground(overviewWave) : overviewChannelBackground);
 		if(channel == null) channel = Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-		d.setBackgroundColor(color(overviewBackground));
+		d.setBackgroundColor(hc ? channel : color(overviewBackground));
 		d.setChannelBackgroundColor(channel);
 		d.setWaveColor(color(overviewWave));
 		d.setMiddleLineColor(color(overviewMiddleLine));
@@ -365,6 +388,33 @@ public class Theme {
 		d.setMarkerColor(color(waveMarker));
 		d.setHighlightedMarkerColor(color(waveMarkerHighlight));
 		d.setSoft(softWave);
+		d.setMarkerWidth(hc ? Math.max(2, markerWidth) : markerWidth);
+		d.setHighContrast(hc);
+	}
+	/**
+	 * Get black or white, whichever contrasts more with the given color.
+	 * Used as display background in high contrast mode.
+	 * @param rgb The color of the waveform
+	 * @return Black or white
+	 */
+	protected static RGB contrastBackground(RGB rgb){
+		double l = luminance(rgb);
+		// contrast against white: 1.05 / (l + 0.05), against black: (l + 0.05) / 0.05
+		return 1.05 / (l + 0.05) > (l + 0.05) / 0.05 ? new RGB(255, 255, 255) : new RGB(0, 0, 0);
+	}
+	/**
+	 * Get the relative luminance of a color as defined by WCAG 2
+	 * @param rgb The color
+	 * @return The luminance from 0 (black) to 1 (white)
+	 */
+	protected static double luminance(RGB rgb){
+		int[] c = new int[]{rgb.red, rgb.green, rgb.blue};
+		double[] l = new double[3];
+		for (int i = 0; i < 3; i++) {
+			double v = c[i] / 255.0;
+			l[i] = v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+		}
+		return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
 	}
 	/**
 	 * Get the background of the main window
@@ -481,6 +531,28 @@ public class Theme {
 	 */
 	public Color getButtonFace(boolean pressed){
 		return color(pressed ? buttonFacePressed : buttonFace);
+	}
+	/**
+	 * Tells whether sections have a header bar with their title
+	 * @return true for section headers
+	 */
+	public boolean hasSectionHeaders(){
+		return headerBackground != null;
+	}
+	/**
+	 * Get the background of the section boxes
+	 * @return The background Color or <code>null</code> for the panel´s
+	 */
+	public Color getSectionBackground(){
+		return color(sectionBackground);
+	}
+	/**
+	 * Get the colors of the section header bars
+	 * @param text true for the text color, false for the bar
+	 * @return The Color
+	 */
+	public Color getHeader(boolean text){
+		return color(text ? headerForeground : headerBackground);
 	}
 	/**
 	 * Get the background of text fields, dropdowns and lists

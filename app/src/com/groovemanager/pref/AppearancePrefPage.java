@@ -1,5 +1,6 @@
 package com.groovemanager.pref;
 
+import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.RadioGroupFieldEditor;
 
@@ -34,5 +35,6 @@ public class AppearancePrefPage extends FieldEditorPreferencePage{
 			themes[i][1] = Theme.THEMES[i].getId();
 		}
 		addField(new RadioGroupFieldEditor(ThemeManager.PREF_KEY, "Theme", 1, themes, getFieldEditorParent(), true));
+		addField(new BooleanFieldEditor(ThemeManager.PREF_HIGH_CONTRAST, "High contrast waveforms (opaque, wider slice markers on black or white)", getFieldEditorParent()));
 	}
 }

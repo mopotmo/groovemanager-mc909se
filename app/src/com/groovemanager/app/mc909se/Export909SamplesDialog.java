@@ -44,7 +44,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
 
 import com.groovemanager.app.mc909se.Mc909SampleEditor.Properties;
 import com.groovemanager.core.ConfigManager;
@@ -56,6 +55,8 @@ import com.groovemanager.sampled.providers.RLNDChunk;
 import com.groovemanager.sampled.providers.WAV909OutputStream;
 import com.groovemanager.thread.ProgressThread;
 import com.groovemanager.thread.SaveFileThread;
+import com.groovemanager.gui.custom.ThemeText;
+import com.groovemanager.gui.custom.ThemeButton;
 
 /**
  * This dialog is used for exporting samples from the Mc909 sample editor to
@@ -76,7 +77,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 	/**
 	 * Text field for user input of the target path
 	 */
-	Text directory;
+	ThemeText directory;
 	/**
 	 * List displaying the currently opened samples to be selected for export.
 	 */
@@ -105,7 +106,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 	/**
 	 * Button for reading the existing samples again
 	 */
-	Button update;
+	ThemeButton update;
 	/**
 	 * Indicates whether the destination contains the MC-909´s sample folder
 	 */
@@ -162,7 +163,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		l.setLayoutData(fd);
 		
 		// Directory
-		directory = new Text(comp, SWT.BORDER);
+		directory = new ThemeText(comp, SWT.NONE);
 		fd = new FormData();
 		fd.left = new FormAttachment(l, 0, SWT.LEFT);
 		fd.top = new FormAttachment(l, 0, SWT.BOTTOM);
@@ -182,7 +183,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		});
 		
 		// Choose
-		Button choose = new Button(comp, SWT.PUSH);
+		ThemeButton choose = new ThemeButton(comp);
 		choose.setText("Choose...");
 		fd = new FormData();
 		fd.right = new FormAttachment(100, -10);
@@ -251,7 +252,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		existingSamples.setData("");
 		
 		// Transfer button
-		Button transfer = new Button(comp, SWT.NONE);
+		ThemeButton transfer = new ThemeButton(comp);
 		transfer.setText(">>");
 		fd = new FormData();
 		fd.left = new FormAttachment(exportSamples, 5, SWT.RIGHT);
@@ -267,7 +268,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		});
 		
 		// Transfer button
-		Button importer = new Button(comp, SWT.NONE);
+		ThemeButton importer = new ThemeButton(comp);
 		importer.setText("<<");
 		fd = new FormData();
 		fd.left = new FormAttachment(transfer, 0, SWT.LEFT);
@@ -301,7 +302,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		nextNum.getComposite().setLayoutData(fd);
 		
 		// Update button
-		update = new Button(comp, SWT.PUSH);
+		update = new ThemeButton(comp);
 		update.setText("Update");
 		fd = new FormData();
 		fd.right = new FormAttachment(transfer, 0, SWT.RIGHT);

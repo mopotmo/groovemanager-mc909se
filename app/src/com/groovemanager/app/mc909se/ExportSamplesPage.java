@@ -24,16 +24,17 @@ import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
 
 import com.groovemanager.core.ConfigManager;
 import com.groovemanager.core.FileManager;
+import com.groovemanager.gui.custom.ThemeCombo;
+import com.groovemanager.gui.custom.ThemeText;
+import com.groovemanager.gui.custom.ThemeButton;
 
 /**
  * This page is part of the ExportRhythmSetWizard.
@@ -69,7 +70,7 @@ public class ExportSamplesPage extends WizardPage {
 	/**
 	 * Text field for input of the Mc909´s root path
 	 */
-	Text directory;
+	ThemeText directory;
 	/**
 	 * Thread that continuously checks, if the selected path is a valid one
 	 */
@@ -77,7 +78,7 @@ public class ExportSamplesPage extends WizardPage {
 	/**
 	 * Popup for part selection
 	 */
-	Combo part,
+	ThemeCombo part,
 	/**
 	 * Popup for bank selection
 	 */
@@ -125,7 +126,7 @@ public class ExportSamplesPage extends WizardPage {
 		l.setLayoutData(fd);
 		
 		// Directory
-		directory = new Text(comp, SWT.BORDER);
+		directory = new ThemeText(comp, SWT.NONE);
 		fd = new FormData();
 		fd.left = new FormAttachment(l, 0, SWT.LEFT);
 		fd.top = new FormAttachment(l, 0, SWT.BOTTOM);
@@ -150,7 +151,7 @@ public class ExportSamplesPage extends WizardPage {
 		});
 		
 		// Choose
-		Button choose = new Button(comp, SWT.PUSH);
+		ThemeButton choose = new ThemeButton(comp);
 		choose.setText("Choose...");
 		fd = new FormData();
 		fd.right = new FormAttachment(100, -10);
@@ -216,7 +217,7 @@ public class ExportSamplesPage extends WizardPage {
 		fd.top = new FormAttachment(usbSelect, 15, SWT.BOTTOM);
 		l.setLayoutData(fd);
 		
-		part = new Combo(comp, SWT.DROP_DOWN | SWT.READ_ONLY);
+		part = new ThemeCombo(comp);
 		for(int i = 1; i <= 16; i++){
 			part.add("" + i);
 		}
@@ -232,7 +233,7 @@ public class ExportSamplesPage extends WizardPage {
 		fd.left = new FormAttachment(usbSelect, 0, SWT.LEFT);
 		fd.top = new FormAttachment(part, 15, SWT.BOTTOM);
 		l.setLayoutData(fd);
-		bank = new Combo(comp, SWT.DROP_DOWN | SWT.READ_ONLY);
+		bank = new ThemeCombo(comp);
 		bank.add("User");
 		bank.add("Card");
 		bank.select(0);
@@ -241,7 +242,7 @@ public class ExportSamplesPage extends WizardPage {
 		fd.bottom = new FormAttachment(l, 0, SWT.BOTTOM);
 		bank.setLayoutData(fd);
 		
-		rhythm = new Combo(comp, SWT.DROP_DOWN | SWT.READ_ONLY);
+		rhythm = new ThemeCombo(comp);
 		rhythm.add("1");
 		rhythm.select(0);
 		fd = new FormData();

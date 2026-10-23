@@ -30,6 +30,8 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DropTarget;
@@ -87,6 +89,7 @@ import com.groovemanager.gui.custom.ChooseFormatDialog;
 import com.groovemanager.gui.custom.InfoGroup;
 import com.groovemanager.gui.custom.InfoGroupContainer;
 import com.groovemanager.gui.custom.ProgressMonitor;
+import com.groovemanager.gui.custom.Section;
 import com.groovemanager.gui.custom.ThemeButton;
 import com.groovemanager.gui.custom.TransportIcons;
 import com.groovemanager.gui.custom.WaveFormDisplay;
@@ -549,9 +552,25 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * Create the elements for the WaveForm content
 	 * @param comp The parent composite
 	 */
-	protected void createWaveContentElements(Composite comp){
-		comp.setLayout(new FillLayout());
+	protected void createWaveContentElements(final Composite comp){
 		tabFolder = new TabFolder(comp, getTabFolderStyle());
+		// The native tab view on macOS has a bezel with a margin on the left,
+		// right and bottom. It is moved out of the visible area, so that the
+		// waveform lines up with the sections beside and below it.
+		comp.setLayout(new Layout() {
+			protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+				return tabFolder.computeSize(wHint, hHint, flushCache);
+			}
+			protected void layout(Composite composite, boolean flushCache) {
+				Rectangle r = composite.getClientArea();
+				tabFolder.setBounds(r);
+				if(!SWT.getPlatform().equals("cocoa")) return;
+				Rectangle client = tabFolder.getClientArea();
+				int left = client.x, right = r.width - client.x - client.width, bottom = r.height - client.y - client.height;
+				if(left < 0 || right < 0 || bottom < 0) return;
+				tabFolder.setBounds(r.x - left, r.y, r.width + left + right, r.height + bottom);
+			}
+		});
 		tabFolder.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 				if(player.getStatus() == AudioPlayer.PLAYING || player.getStatus() == AudioPlayer.PAUSE_PLAY || player.getStatus() == AudioPlayer.PAUSE_REC){
@@ -678,7 +697,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		parent.setLayout(new FormLayout());
 		FormData fd;
 		
-		Composite comp = new Composite(parent, SWT.NONE);
+		Section zoomSection = new Section(parent, "Zoom", false);
+		Composite comp = new Composite(zoomSection, SWT.NONE);
 		GridLayout gl = Spacing.grid(1);
 		gl.verticalSpacing = Spacing.BUTTON;
 		comp.setLayout(gl);
@@ -686,7 +706,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		fd.left = new FormAttachment(0, 0);
 		fd.bottom = fd.right = new FormAttachment(100, 0);
 		fd.height = -1;
-		comp.setLayoutData(fd);
+		zoomSection.setLayoutData(fd);
 		
 		zoomIn = new ThemeButton(comp);
 		zoomIn.setText("Zoom +");
@@ -736,14 +756,15 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		});
 		zoomAll.setEnabled(false);
 		
-		transportBar = new TransportBar(parent);
+		Section transportSection = new Section(parent, "Transport", false);
+		transportBar = new TransportBar(transportSection);
 		transportBar.disableAll();
 		player.addAudioPlayerListener(transportBar);
 		fd = new FormData();
 		fd.left = fd.top = new FormAttachment(0, 0);
 		fd.right = new FormAttachment(100, 0);
 		fd.height = -1;
-		transportBar.getComposite().setLayoutData(fd);
+		transportSection.setLayoutData(fd);
 	}
 	/**
 	 * Make the window high enough for the transport bar and the zoom buttons
@@ -761,8 +782,9 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		int trimHeight = size.y - mainContent.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
 		int minHeight = trimHeight + controlBar.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + rightBarHeight;
 		getShell().setMinimumSize(Math.min(size.x, 640), minHeight);
-		// leave room for a few lines of the file list in the left bar
-		return new Point(Math.max(size.x, 1000), Math.max(Math.max(size.y, minHeight), 680));
+		// leave room for a few lines of the file list in the left bar, also
+		// below the section headers of the MC-909 themes
+		return new Point(Math.max(size.x, 1000), Math.max(Math.max(size.y, minHeight), 760));
 	}
 	/**
 	 * On macOS the menu is not part of the window, so there is nothing to
