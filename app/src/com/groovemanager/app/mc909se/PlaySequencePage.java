@@ -12,6 +12,7 @@ import javax.sound.midi.Sequencer;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
@@ -56,6 +57,14 @@ public class PlaySequencePage extends OnlyMessagePage {
 	 */
 	private String resultText = "";
 	/**
+	 * Sends the rhythm set again, if set
+	 */
+	Runnable resend;
+	/**
+	 * Button for sending the rhythm set again
+	 */
+	private Button retry;
+	/**
 	 * Text to display when the play button is visible
 	 */
 	final static String VISIBLE_TEXT = "You can now transmit the slice sequence to your MC-909 via MIDI. " +
@@ -87,6 +96,20 @@ public class PlaySequencePage extends OnlyMessagePage {
 	public void createControl(Composite parent) {
 		super.createControl(parent);
 		Composite comp = (Composite)getControl();
+		
+		retry = new Button(comp, SWT.PUSH);
+		retry.setText("Send again");
+		retry.setToolTipText("Send the rhythm set to the MC-909 again, e.g. after a MIDI problem");
+		retry.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				if(resend == null) return;
+				retry.setEnabled(false);
+				BusyIndicator.showWhile(retry.getDisplay(), resend);
+				retry.setEnabled(true);
+			}
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
 				
 		play = new Button(comp, SWT.PUSH);
 		play.setVisible(visible);

@@ -240,55 +240,76 @@ public class ExportRhythmSetDialog extends WizardDialog {
 			super.nextPressed();
 		}
 		else if(getCurrentPage() == wizard.createRhythmSetPage){
-			byte cont;
-			if(wizard.exportSamplesPage.bank.getSelectionIndex() == 0) cont = 0;
-			else cont = 32;
-			try {
-				int channel = wizard.exportSamplesPage.part.getSelectionIndex();
-				MIDIManager.getDefault().sendController(channel, (byte)0, (byte)82);
-				MIDIManager.getDefault().sendController(channel, (byte)32, cont);
-				MIDIManager.getDefault().sendProgramChange(channel, (byte)wizard.exportSamplesPage.rhythm.getSelectionIndex());
-				
-				MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmLevelMessage(channel, (byte)127));
-				MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmNameMessage(channel, properties.nameText.getText()));
-				
-				int channels = wt.getFormat().getChannels();
-				
-				for(int i = 0; i < samples; i++){
-					String s = properties.nameText.getText();
-					while(s.length() < 14) s += " ";
-					String nr;
-					if(i < 9) nr = "0" + (i + 1);
-					else nr = "" + (i + 1);
-					s = s.substring(0, 14) + nr;
-					MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmToneNameMessage(channel, s, i));
-					int right;
-					if(channels == 1) right = 0;
-					else right = maxNr + 2 + i * 2 + 1;
-					MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmWaveMessage(channel, i, 0, isUser, maxNr + 2 + i * channels, right));
+			wizard.playSequencePage.resend = new Runnable() {
+				public void run() {
+					sendRhythmSet();
 				}
-				String destination;
-				if(wizard.exportSamplesPage.bank.getSelectionIndex() == 0) destination = "User";
-				else destination = "Card";
-				int part = channel + 1;
-				wizard.playSequencePage.setMessage("The rhythm set has been sent to part " + part + ".", WizardPage.INFORMATION);
-				wizard.playSequencePage.setResultText("Part " + part + " (MIDI channel " + part + ") now plays the new rhythm set, which is not stored yet. "
-					+ "To keep it, write it on the MC-909, e.g. to " + destination + " rhythm set " + (wizard.exportSamplesPage.rhythm.getSelectionIndex() + 1) + ".\n\n"
-					+ "If part " + part + " didn't change: check that it receives on MIDI channel " + part + ", that the MC-909 accepts SysEx messages, and that it had finished loading the samples.");
-				wizard.playSequencePage.setImage(FileManager.getDefault().getRootPath("909screens/write.jpg"));
-			} catch (InvalidMidiDataException e) {
-				e.printStackTrace();
-				wizard.playSequencePage.setMessage("The Rhythm set could not be created because of the following reason:\n" + e.getMessage(), WizardPage.ERROR);
-			} catch (MidiUnavailableException e) {
-				e.printStackTrace();
-				wizard.playSequencePage.setMessage("The Rhythm set could not be created because of the following reason:\n" + e.getMessage(), WizardPage.ERROR);
-			}
+			};
+			sendRhythmSet();
 			super.nextPressed();
 			wizard.canFinish = true;
 			((WizardPage)getCurrentPage()).setPageComplete(true);
 			getButton(IDialogConstants.FINISH_ID).setEnabled(true);
 		}
 		getButton(IDialogConstants.BACK_ID).setEnabled(false);
+	}
+	/**
+	 * Create the rhythm set on the MC-909 over MIDI and show the result on
+	 * the last page
+	 */
+	private void sendRhythmSet(){
+		byte cont;
+		if(wizard.exportSamplesPage.bank.getSelectionIndex() == 0) cont = 0;
+		else cont = 32;
+		try {
+			int channel = wizard.exportSamplesPage.part.getSelectionIndex();
+			MIDIManager.getDefault().sendController(channel, (byte)0, (byte)82);
+			MIDIManager.getDefault().sendController(channel, (byte)32, cont);
+			MIDIManager.getDefault().sendProgramChange(channel, (byte)wizard.exportSamplesPage.rhythm.getSelectionIndex());
+			
+			MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmLevelMessage(channel, (byte)127));
+			MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmNameMessage(channel, properties.nameText.getText()));
+			
+			int channels = wt.getFormat().getChannels();
+			
+			for(int i = 0; i < samples; i++){
+				String s = properties.nameText.getText();
+				while(s.length() < 14) s += " ";
+				String nr;
+				if(i < 9) nr = "0" + (i + 1);
+				else nr = "" + (i + 1);
+				s = s.substring(0, 14) + nr;
+				MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmToneNameMessage(channel, s, i));
+				int right;
+				if(channels == 1) right = 0;
+				else right = maxNr + 2 + i * 2 + 1;
+				MIDIManager.getDefault().sendSysEx(MC909SysEx.createRhythmWaveMessage(channel, i, 0, isUser, maxNr + 2 + i * channels, right));
+			}
+			String destination;
+			if(wizard.exportSamplesPage.bank.getSelectionIndex() == 0) destination = "User";
+			else destination = "Card";
+			int part = channel + 1;
+			wizard.playSequencePage.setErrorMessage(null);
+			wizard.playSequencePage.setMessage("The rhythm set has been sent to part " + part + ".", WizardPage.INFORMATION);
+			wizard.playSequencePage.setResultText("Part " + part + " (MIDI channel " + part + ") now plays the new rhythm set, which is not stored yet. "
+				+ "To keep it, write it on the MC-909, e.g. to " + destination + " rhythm set " + (wizard.exportSamplesPage.rhythm.getSelectionIndex() + 1) + ".\n\n"
+				+ "If part " + part + " didn't change: check that it receives on MIDI channel " + part + ", that the MC-909 accepts SysEx messages, and that it had finished loading the samples.");
+			wizard.playSequencePage.setImage(FileManager.getDefault().getRootPath("909screens/write.jpg"));
+		} catch (InvalidMidiDataException e) {
+			e.printStackTrace();
+			sendFailed(e);
+		} catch (MidiUnavailableException e) {
+			e.printStackTrace();
+			sendFailed(e);
+		}
+	}
+	/**
+	 * Show that sending the rhythm set failed
+	 * @param e The reason
+	 */
+	private void sendFailed(Exception e){
+		wizard.playSequencePage.setErrorMessage("Sending the rhythm set failed: " + e.getMessage());
+		wizard.playSequencePage.setResultText("Check the MIDI connection to the MC-909 and the MIDI out port in the settings, then click \"Send again\".");
 	}
 	/**
 	 * Back is not possible
