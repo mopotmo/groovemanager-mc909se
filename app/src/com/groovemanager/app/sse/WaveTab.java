@@ -274,7 +274,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		
 		source = f;
 		savePeak();
-		tabItem.setText(source.getName());
+		setTabText(source.getName());
 		modified = false;
 	}
 	/**
@@ -313,6 +313,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 			}
 			public void selectionChanged(Selectable s, Selection sel) {
 				WaveTab.this.editor.zoomSel.setEnabled(!sel.isEmpty());
+				WaveTab.this.editor.updateEditActions();
 			}
 			public void positionChanged(Selectable s, int pos) {
 			}
@@ -323,7 +324,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		});
 		source = f;
 		tabItem = new TabItem(parent, style);
-		tabItem.setText(f.getName());
+		setTabText(f.getName());
 		tabItem.setControl(waveDisplay.getComposite());
 		tabItem.setData(WaveTab.this);
 		tabItem.addDisposeListener(new DisposeListener() {
@@ -355,6 +356,17 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 				}
 			}
 		}
+	}
+	/**
+	 * Set the text of this WaveTab´s TabItem. On macOS the TabFolder doesn´t
+	 * measure the label of a tab again after it has been added, so the tab
+	 * would stay as narrow as an empty one. Setting the font forces it to do
+	 * so.
+	 * @param text The new text
+	 */
+	protected void setTabText(String text){
+		tabItem.setText(text);
+		if(SWT.getPlatform().equals("cocoa")) tabItem.getParent().setFont(tabItem.getParent().getFont());
 	}
 	/**
 	 * Create the KeyListener to be added to the WaveFormDisplay´s composite
@@ -400,7 +412,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 	 * @param waveForm The WaveForm corresponding to the file
 	 */
 	protected void setInput(File f, AudioFileWaveForm waveForm){
-		tabItem.setText(f.getName());
+		setTabText(f.getName());
 		source = f;
 		cutList.removeModificationListener(this);
 		cutList = new CutList(new AudioFileSource(f, waveForm));
@@ -583,7 +595,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		modified = true;
 		lastWaveForm = null;
 		waveDisplay.setSelection(new Selection(waveDisplay.getPosition()));
-		if(!isNew) tabItem.setText("* " + this.source.getName());
+		if(!isNew) setTabText("* " + this.source.getName());
 		if(!recording){
 			lastWaveForm = null;
 			lastWaveFormPos = 0;
@@ -874,6 +886,9 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 			default :
 				break;
 		}
+		// the cut list notifies the editor before the undo/redo lists are
+		// updated, so update the edit actions again
+		editor.updateEditActions();
 	}
 	/**
 	 * Get the TabItem associated with this WaveTab
@@ -1014,6 +1029,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 			cutList.addElement(el);
 			undoOperations.add(el);
 			redoOperations.clear();
+			editor.updateEditActions();
 			thread.interrupt();
 		} catch (NotReadyException e) {
 			e.printStackTrace();

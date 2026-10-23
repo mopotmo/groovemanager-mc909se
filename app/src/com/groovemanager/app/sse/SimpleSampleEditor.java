@@ -237,23 +237,26 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * pressed by the space key.
 	 */
 	/**
-	 * Updates the enabled state of the edit actions. It is called when the
-	 * edit menu is shown and before a shortcut is processed, because on macOS
-	 * the menu isn't shown for shortcuts (on Windows it is), and disabled
-	 * actions would ignore their shortcut.
+	 * Updates the enabled state of the edit actions when the edit menu is
+	 * shown
 	 */
 	protected IMenuListener editMenuUpdater;
 	/**
-	 * Display filter that updates the edit actions before a shortcut with the
-	 * Command/Ctrl key is processed
+	 * Update the enabled state of the edit actions. Must be called whenever
+	 * the selection, the edit history, the active tab or the copy source
+	 * changes: On macOS the edit menu isn't shown for shortcuts (on Windows
+	 * it is), and a disabled action ignores its shortcut.
 	 */
-	protected Listener shortcutFilter = new Listener() {
-		public void handleEvent(Event e) {
-			if((e.stateMask & SWT.MOD1) == 0 || editMenuUpdater == null) return;
-			if(!(e.widget instanceof Control) || getShell() == null || ((Control)e.widget).getShell() != getShell()) return;
-			editMenuUpdater.menuAboutToShow(null);
-		}
-	};
+	public void updateEditActions(){
+		if(editMenuUpdater == null || getShell() == null || getShell().isDisposed()) return;
+		Display d = getShell().getDisplay();
+		if(d.getThread() == Thread.currentThread()) editMenuUpdater.menuAboutToShow(null);
+		else d.asyncExec(new Runnable() {
+			public void run() {
+				updateEditActions();
+			}
+		});
+	}
 	protected Listener spaceFilter = new Listener() {
 		public void handleEvent(Event e) {
 			if(e.character != ' ' || (e.stateMask & SWT.MODIFIER_MASK) != 0) return;
@@ -578,6 +581,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			EffectAction action = (EffectAction) iter.next();
 			action.setWaveTab(wt);
 		}
+		updateEditActions();
 	}
 	/**
 	 * Notification that the currently active source file (represented by a
@@ -848,11 +852,9 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		sashForm.addKeyListener(keyListener);
 		final Display display = getShell().getDisplay();
 		display.addFilter(SWT.KeyDown, spaceFilter);
-		display.addFilter(SWT.KeyDown, shortcutFilter);
 		getShell().addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent e) {
 				display.removeFilter(SWT.KeyDown, spaceFilter);
-				display.removeFilter(SWT.KeyDown, shortcutFilter);
 			}
 		});
 		
@@ -2341,6 +2343,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 */
 	public void setCopySource(WaveTab wt){
 		copySource = wt;
+		updateEditActions();
 	}
 	/**
 	 * Remove the current copy source
@@ -2348,5 +2351,6 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 */
 	public void removeCopySource(){
 		copySource = null;
+		updateEditActions();
 	}
 }
