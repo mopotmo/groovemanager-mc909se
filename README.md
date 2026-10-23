@@ -1,6 +1,6 @@
 # GrooveManager MC-909 Sample Editor
 
-A sample editor for the Roland MC-909 groovebox, written in Java (SWT/JFace, Java Sound) in 2004 as the practical part of my diploma thesis *"Java Sound als Plattform für die Entwicklung studiotauglicher Audioapplikationen"* ("Java Sound as a platform for developing studio-grade audio applications", Hochschule der Medien Stuttgart, August 2004). This repository holds the original sources of release 1.0 (2004-08-08).
+A sample editor for the Roland MC-909 groovebox, written in Java (SWT/JFace, Java Sound) in 2004 as the practical part of my diploma thesis [*"Java Sound als Plattform für die Entwicklung studiotauglicher Audioapplikationen"*](docs/thesis/diplomarbeit.pdf) ("Java Sound as a platform for developing studio-grade audio applications", Hochschule der Medien Stuttgart, August 2004). This repository holds the original sources of release 1.0 (2004-08-08).
 
 > **Status: archive.** The code is published as it was in 2004. It does not build or run out of the box on a current system (see [Building](#building)). A revived version that runs on today's Java and macOS/Windows/Linux is planned.
 
@@ -46,6 +46,9 @@ Both editors were tested on Windows and Linux in 2004.
 | `app/root` | Icons and MC-909 screen images. The app loads them from `./root` at runtime |
 | `plugins/floatconversion` | Java Sound `FormatConversionProvider` for float PCM, released as `floatconversion.jar` |
 | `docs/install` | Original installation notes (German) |
+| `docs/thesis/diplomarbeit.pdf` | The diploma thesis (German, 106 pages). Chapter VI describes the editors and plugins in detail |
+| `docs/screenshots` | Screenshots from the thesis |
+| `samples` | Example sounds from the thesis CD-ROM (16/24/32-bit WAV). A longer recording, "Elektronische Kerzenlichtmusik.wav" (82 MB), is attached to the v1.0 release |
 
 Related repositories:
 - [jsASIO](https://github.com/mopotmo/jsasio): ASIO `MixerProvider` for Java Sound (Windows)

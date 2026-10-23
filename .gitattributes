@@ -1,3 +1,6 @@
 * text=auto eol=lf
 *.gif binary
 *.jpg binary
+*.wav binary
+*.pdf binary
+*.png binary
