@@ -1,8 +1,8 @@
 # GrooveManager MC-909 Sample Editor
 
-A sample editor for the Roland MC-909 groovebox, written in Java (SWT/JFace, Java Sound) in 2004 as the practical part of my diploma thesis [*"Java Sound als Plattform für die Entwicklung studiotauglicher Audioapplikationen"*](docs/thesis/diplomarbeit.pdf) ("Java Sound as a platform for developing studio-grade audio applications", Hochschule der Medien Stuttgart, August 2004). This repository holds the original sources of release 1.0 (2004-08-08).
+A sample editor for the Roland MC-909 groovebox, written in Java (SWT/JFace, Java Sound) in 2004 as the practical part of my diploma thesis [*"Java Sound als Plattform für die Entwicklung studiotauglicher Audioapplikationen"*](docs/thesis/diplomarbeit.pdf) ("Java Sound as a platform for developing studio-grade audio applications", Hochschule der Medien Stuttgart, August 2004). This repository holds the sources of release 1.0 (2004-08-08), revived to run on a current Java.
 
-> **Status: archive.** The code is published as it was in 2004. It does not build or run out of the box on a current system (see [Building](#building)). A revived version that runs on today's Java and macOS/Windows/Linux is planned.
+> **Status:** `main` builds with Gradle and runs on Java 25 with current SWT/JFace (see [Running it today](#running-it-today)). The changes needed for that are kept small and are listed below. The original 2004 state is tagged [`v1.0`](../../tree/v1.0), and its release has the original distribution zips.
 
 ![Simple Sample Editor](docs/screenshots/simple-sample-editor.png)
 
@@ -14,7 +14,7 @@ There are two applications:
 - Opens any number of files in tabs, in every format a Java Sound plugin can read. Files can also be opened by drag and drop. Saving is WAV only.
 - **Non-destructive editing** with cut lists: Copy, Cut, Paste, Delete, Trim, and unlimited Undo/Redo.
 - **Effects** through a plugin interface (`META-INF/services/com.groovemanager.sampled.fx.Effect`): Normalize, Pseudo Echo, Chorus/Flanger (experimental). Each effect is applied non-destructively through a temporary file.
-- **Waveform display** with cached peak files, selection, markers (add with Ctrl+click, move with Shift and the arrow keys), zoom, and an overview of the whole file.
+- **Waveform display** with cached peak files, selection, markers (add with Ctrl+click, ⌘+click on macOS; move with Shift and the arrow keys), zoom, and an overview of the whole file.
 - **Streaming playback and recording.** The Settings dialog has driver selection, buffer size and player thread priority. Info panels show the file, the device (including buffer fill level) and JVM memory.
 
 **MC-909 Sample Editor** (`app/mc909se`) extends the basic version for the Roland MC-909:
@@ -54,9 +54,31 @@ Related repositories:
 - [jsREX](https://github.com/mopotmo/jsrex): ReCycle file reader for Java Sound (Windows)
 - [floatconversion](https://github.com/mopotmo/floatconversion): `PCM_FLOAT` encoding and conversions for Java Sound. It was part of this repository up to v1.0
 
-## Building
+## Running it today
 
-The 2004 build was done in Eclipse. There is no build script. To compile the original code you need:
+You need a JDK 25 (for example `brew install openjdk@25` on macOS). Gradle and the SWT/JFace libraries for your platform are downloaded by the Gradle wrapper:
+
+```sh
+./gradlew run      # MC-909 Sample Editor
+./gradlew runSse   # Simple Sample Editor
+```
+
+The app runs from the `app` directory and loads its icons from `app/root`. Errors go to `app/root/error.log`. Settings are stored under your home directory. Try the files in `samples/`.
+
+Tested on macOS (Apple Silicon). Windows and Linux should work but haven't been tested yet. Not working or untested:
+- **MIDI on macOS:** Java's built-in MIDI on macOS doesn't support SysEx, so creating patches on the MC-909 and the MIDI preview are untested. A missing MIDI device only produces warnings in the log.
+- **ASIO and REX:** the plugins are 32-bit Windows DLLs and can't be loaded by a current 64-bit JVM.
+
+What was changed for the revival (see the `Revival:` commits):
+- Gradle build (Java 25 toolchain, SWT 3.135 / JFace 3.40 from Maven Central).
+- `java.util.ServiceLoader` instead of the removed `sun.misc.Service`, and Java's built-in `PCM_FLOAT` encoding instead of the floatconversion plugin.
+- `Thread.interrupt()` instead of `Thread.stop()`, which throws since Java 20.
+- The waveform is drawn in paint events through an off-screen image. Drawing directly on the control and XOR drawing crash on current macOS. The selection is now drawn semi-transparent.
+- macOS: ⌘ instead of Ctrl for shortcuts and marker editing, space for play/stop anywhere in the window, edit actions are updated on every change (macOS doesn't open the menu for shortcuts), file drops from the Finder, and workarounds for SWT layout problems (tab labels, info panels, right bar).
+
+## Original 2004 build
+
+The 2004 build was done in Eclipse. There is no build script. To compile the original code (tag `v1.0`) you need:
 
 - **JDK 5 to 8.** `AudioManager` uses `sun.misc.Service`, which was removed in Java 9. The code itself is Java 1.4 style.
 - **SWT 3.0.x and JFace 3.0** (`swt.jar`, `jface.jar`, `runtime.jar`, `boot.jar` from Eclipse 3.0) plus the matching SWT native libraries.
