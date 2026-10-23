@@ -4,7 +4,7 @@ A sample editor for the Roland MC-909 groovebox, written in Java (SWT/JFace, Jav
 
 > **Status:** `main` builds with Gradle and runs on Java 25 with current SWT/JFace (see [Running it today](#running-it-today)). The changes needed for that are kept small and are listed below. The original 2004 state is tagged [`v1.0`](../../tree/v1.0), and its release has the original distribution zips.
 
-![Simple Sample Editor](docs/screenshots/simple-sample-editor.png)
+![MC-909 Sample Editor, revived version on macOS](docs/screenshots/mc909-sample-editor.png)
 
 ## Features (2004)
 
@@ -16,6 +16,8 @@ There are two applications:
 - **Effects** through a plugin interface (`META-INF/services/com.groovemanager.sampled.fx.Effect`): Normalize, Pseudo Echo, Chorus/Flanger (experimental). Each effect is applied non-destructively through a temporary file.
 - **Waveform display** with cached peak files, selection, markers (add with Ctrl+click, ⌘+click on macOS; move with Shift and the arrow keys), zoom, and an overview of the whole file.
 - **Streaming playback and recording.** The Settings dialog has driver selection, buffer size and player thread priority. Info panels show the file, the device (including buffer fill level) and JVM memory.
+
+![Simple Sample Editor (2004, Windows)](docs/screenshots/simple-sample-editor.png)
 
 **MC-909 Sample Editor** (`app/mc909se`) extends the basic version for the Roland MC-909:
 - **Per-sample MC-909 properties:** name, loop mode, time-stretch type, bars/time signature/BPM, with BPM calculated from the selection.
