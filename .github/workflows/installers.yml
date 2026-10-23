@@ -27,9 +27,9 @@ jobs:
             platform: linux-x64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "25"
@@ -55,16 +55,18 @@ jobs:
         shell: bash
         run: ./gradlew jpackage -PappVersion=${{ steps.version.outputs.version }}
 
+      # no version in the names, so that releases/latest/download/<name>
+      # links (e.g. on groovemanager.com) keep working for new releases
       - name: Rename for the platform
         shell: bash
         run: |
           mkdir dist
           for f in build/jpackage/output/*; do
-            mv "$f" "dist/groovemanager-mc909se-${{ steps.version.outputs.version }}-${{ matrix.platform }}.${f##*.}"
+            mv "$f" "dist/groovemanager-mc909se-${{ matrix.platform }}.${f##*.}"
           done
           ls -l dist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: installer-${{ matrix.platform }}
           path: dist/*
