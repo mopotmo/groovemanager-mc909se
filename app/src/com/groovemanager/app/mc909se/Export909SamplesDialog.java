@@ -393,6 +393,11 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 	private void transfer(){
 		int next = nextNum.getSelection();
 		int[] indices = exportSamples.getSelectionIndices();
+		// Without a selection, add all samples instead of doing nothing
+		if(indices.length == 0){
+			indices = new int[exportSamples.getItemCount()];
+			for (int i = 0; i < indices.length; i++) indices[i] = i;
+		}
 		for (int i = 0; i < indices.length; i++) {
 			Properties p = (Properties)properties.get(indices[i]); 
 			transferOne(p, next);
