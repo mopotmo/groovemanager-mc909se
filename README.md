@@ -109,6 +109,10 @@ java -Djava.library.path=. -jar start.jar
 
 The manifest's `Class-Path` lists the jars expected in `ext/`.
 
+## Contributing
+
+Feedback, issues, forks and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). The editor is mainly tested on macOS, so feedback from Windows and Linux is especially welcome. If you like the editor, you can also support it on [Ko-fi](https://ko-fi.com/manurobledo).
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

@@ -503,6 +503,22 @@ public class Theme {
 		return bitmapIcons;
 	}
 	/**
+	 * Get the background of the channels of the main waveform, as shown by
+	 * applyWaveColors()
+	 * @return The background Color
+	 */
+	public Color getWaveBackground(){
+		if(ThemeManager.getDefault().isHighContrast()) return color(contrastBackground(wave));
+		return color(waveChannelBackground);
+	}
+	/**
+	 * Get the color of the main waveform
+	 * @return The waveform Color
+	 */
+	public Color getWaveColor(){
+		return color(wave);
+	}
+	/**
 	 * Get the color of the frames around the content areas
 	 * @return The frame Color or <code>null</code> for no frames
 	 */

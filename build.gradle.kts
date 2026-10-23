@@ -99,7 +99,7 @@ tasks.register<JavaExec>("runSse") {
 // Native installers (dmg on macOS, msi on Windows, deb on Linux) with a
 // bundled Java runtime. jpackage can only build for the platform it runs on,
 // see .github/workflows/installers.yml.
-version = findProperty("appVersion") as String? ?: "1.4.0"
+version = findProperty("appVersion") as String? ?: "1.4.1"
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
 
 val jpackageInput = layout.buildDirectory.dir("jpackage/input")

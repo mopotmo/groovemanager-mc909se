@@ -48,6 +48,7 @@ import com.groovemanager.core.FileManager;
 import com.groovemanager.exception.NotFinishedException;
 import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.custom.KeyboardKeyListener;
+import com.groovemanager.gui.custom.DropHint;
 import com.groovemanager.gui.custom.Section;
 import com.groovemanager.gui.custom.ThemeButton;
 import com.groovemanager.gui.custom.ThemeCombo;
@@ -135,6 +136,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		Control c = super.createContents(parent);
 		tabFolder.addSelectionListener(((Left909)left).sListener);
 		((Left909)left).fileList.addSelectionListener(((Left909)left).sListener);
+		addDropTarget(((Left909)left).listHint);
 		c.addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent e) {
 				MIDIManager.getDefault().dispose();
@@ -205,8 +207,10 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 	 * @see com.groovemanager.actions.file.FileCloseListener#fileClosed(java.io.File)
 	 */
 	public void fileClosed(File f) {
-		((Left909)left).remove(getTabForFile(f));
+		WaveTab wt = getTabForFile(f);
 		super.fileClosed(f);
+		// closing may have been cancelled
+		if(getTabForFile(f) == null) ((Left909)left).remove(wt);
 		Event ev = new Event();
 		ev.widget = tabFolder;
 		SelectionEvent e = new SelectionEvent(ev);
@@ -256,6 +260,19 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		 */
 		Composite fileListComp;
 		/**
+		 * Shown instead of the file list while no file is open
+		 */
+		DropHint listHint;
+		/**
+		 * StackLayout switching between the file list and the hint
+		 */
+		StackLayout listStack;
+		/**
+		 * The sections of the file list, the properties and the export
+		 * buttons
+		 */
+		Section fileListSection, propertiesSection, exportSection;
+		/**
 		 * Contruct a new Left909
 		 * @param comp The parent composite
 		 */
@@ -304,7 +321,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			FormData fd;
 			
 			// MC-909 section with the export buttons
-			Section exportSection = new Section(comp, "MC-909", false);
+			exportSection = new Section(comp, "MC-909", false);
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
 			fd.height = -1;
@@ -341,7 +358,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			exportRS.setEnabled(false);
 			
 			// Properties
-			Section propertiesSection = new Section(comp, "Properties", true);
+			propertiesSection = new Section(comp, "Properties", true);
 			fd = new FormData();
 			fd.left = new FormAttachment(0, 0);
 			fd.height = -1;
@@ -352,15 +369,24 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			propertiesComp.setLayout(stack);
 			
 			// File list
-			Section fileListSection = new Section(comp, "Samples", true);
+			fileListSection = new Section(comp, "Samples", true);
 			fd = new FormData();
 			fd.top = fd.left = new FormAttachment(0, 0);
 			fd.right = new FormAttachment(100, 0);
 			fd.bottom = new FormAttachment(propertiesSection, 0);
 			fileListSection.setLayoutData(fd);
 			fileListComp = new Composite(fileListSection, SWT.NONE);
-			fileListComp.setLayout(new FillLayout());
+			listStack = new StackLayout();
+			fileListComp.setLayout(listStack);
 			fileList = new List(fileListComp, SWT.SINGLE);
+			listHint = new DropHint(fileListComp, DropHint.LIST, "Drop samples here", "or click to open a file");
+			listHint.addSelectionListener(new SelectionListener() {
+				public void widgetSelected(SelectionEvent e) {
+					fileOpenAction.run();
+				}
+				public void widgetDefaultSelected(SelectionEvent e) {
+				}
+			});
 			sListener = new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					int sel;
@@ -382,11 +408,27 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 						}
 					}
 					exportRS.setEnabled(wt != null && wt.getWaveDisplay().getMarkerCount() > 0);
+					updateEmpty();
 					leftBar.layout();
 				}
 				public void widgetDefaultSelected(SelectionEvent e) {
 				}
 			};
+			updateEmpty();
+		}
+		/**
+		 * Show the hint for dropping files and hide the properties while no
+		 * file is open. Without a file, samples can only be imported.
+		 */
+		void updateEmpty(){
+			// called from the constructor of LeftBar before the fields are set
+			boolean empty = files == null || files.isEmpty();
+			listStack.topControl = empty ? (Control)listHint : fileList;
+			fileListComp.layout();
+			propertiesSection.setVisible(!empty);
+			((FormData)fileListSection.getLayoutData()).bottom = new FormAttachment(empty ? (Control)exportSection : propertiesSection, 0);
+			imExport.setText(empty ? "Import" : "Import / Export");
+			fileListSection.getParent().layout();
 		}
 		/**
 		 * Create a new Properties object for a new added WaveTab

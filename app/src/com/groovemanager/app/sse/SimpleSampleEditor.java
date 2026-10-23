@@ -73,6 +73,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.groovemanager.actions.ConfigAction;
 import com.groovemanager.gui.custom.AboutDialog;
+import com.groovemanager.gui.custom.DropHint;
 import com.groovemanager.actions.file.FileCloseAction;
 import com.groovemanager.actions.file.FileCloseListener;
 import com.groovemanager.actions.file.FileNewAction;
@@ -173,6 +174,14 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * The TabFolder containing the WaveTabs
 	 */
 	protected TabFolder tabFolder;
+	/**
+	 * Shown instead of the TabFolder while no file is open
+	 */
+	protected DropHint waveHint;
+	/**
+	 * Opens the dropped files
+	 */
+	protected DropTargetListener dropListener;
 	/**
 	 * The transport bar on the right
 	 */
@@ -556,6 +565,14 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 */
 	protected void createWaveContentElements(final Composite comp){
 		tabFolder = new TabFolder(comp, getTabFolderStyle());
+		waveHint = new DropHint(comp, DropHint.WAVE, "Drop audio files here", "or click to open a file");
+		waveHint.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				fileOpenAction.run();
+			}
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
 		// The native tab view on macOS has a bezel with a margin on the left,
 		// right and bottom. It is moved out of the visible area, so that the
 		// waveform lines up with the sections beside and below it.
@@ -565,6 +582,11 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			}
 			protected void layout(Composite composite, boolean flushCache) {
 				Rectangle r = composite.getClientArea();
+				// the hint takes the place of the TabFolder while it is empty
+				boolean empty = tabFolder.getItemCount() == 0;
+				waveHint.setVisible(empty);
+				tabFolder.setVisible(!empty);
+				waveHint.setBounds(r);
 				tabFolder.setBounds(r);
 				if(!SWT.getPlatform().equals("cocoa")) return;
 				Rectangle client = tabFolder.getClientArea();
@@ -592,6 +614,8 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 	 * WaveTabs have been closed
 	 */
 	protected void tabActivated(WaveTab wt){
+		// show or hide the hint for dropping files
+		waveContent.layout();
 		if(wt == null){
 			player.removeProvider();
 			zoomWaveDisplay.removeSource();
@@ -915,7 +939,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		
 		// The macOS Finder offers copying instead of linking, and the drop
 		// target must be on the controls under the mouse, not only the shell
-		DropTargetListener dropListener = new DropTargetListener() {
+		dropListener = new DropTargetListener() {
 			/**
 			 * Choose an operation the drag source supports
 			 */
@@ -947,16 +971,21 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			public void dropAccept(DropTargetEvent event) {
 			}
 		};
-		Control[] dropControls = new Control[]{getShell(), mainContent};
-		for (int i = 0; i < dropControls.length; i++) {
-			DropTarget target = new DropTarget(dropControls[i], DND.DROP_LINK | DND.DROP_COPY | DND.DROP_DEFAULT);
-			target.setTransfer(new Transfer[]{FileTransfer.getInstance()});
-			target.addDropListener(dropListener);
-		}
+		Control[] dropControls = new Control[]{getShell(), mainContent, waveHint};
+		for (int i = 0; i < dropControls.length; i++) addDropTarget(dropControls[i]);
 		
 		setShells(getShell());
 		
 		return mainContent;
+	}
+	/**
+	 * Let files dropped on a control be opened
+	 * @param c The control
+	 */
+	protected void addDropTarget(Control c){
+		DropTarget target = new DropTarget(c, DND.DROP_LINK | DND.DROP_COPY | DND.DROP_DEFAULT);
+		target.setTransfer(new Transfer[]{FileTransfer.getInstance()});
+		target.addDropListener(dropListener);
 	}
 	/**
 	 * This method is called after the Shell has been created so that the Shell
