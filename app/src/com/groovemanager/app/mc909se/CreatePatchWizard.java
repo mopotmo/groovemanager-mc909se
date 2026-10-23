@@ -26,15 +26,23 @@ public class CreatePatchWizard extends Wizard {
 	 */
 	String patchName;
 	/**
+	 * The names of the patches in the card bank or null if unknown
+	 */
+	String[] cardPatchNames;
+	/**
 	 * Create a new CreatePatchWizard
 	 * @param patchName The name of the patch
+	 * @param cardPatchNames The names of the patches in the card bank or
+	 * null if unknown
 	 */
-	public CreatePatchWizard(String patchName) {
+	public CreatePatchWizard(String patchName, String[] cardPatchNames) {
 		setWindowTitle("Create patch for sample " + patchName);
 		this.patchName = patchName;
+		this.cardPatchNames = cardPatchNames;
 	}
 	public void addPages() {
 		selectPatchPage = new SelectPatchPage("create", patchName);
+		selectPatchPage.cardPatchNames = cardPatchNames;
 		writePatchPage = new WritePatchPage("write");
 		addPage(selectPatchPage);
 		addPage(writePatchPage);

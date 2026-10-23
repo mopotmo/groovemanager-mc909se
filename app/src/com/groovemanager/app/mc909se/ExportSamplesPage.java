@@ -87,6 +87,11 @@ public class ExportSamplesPage extends WizardPage {
 	 */
 	rhythm;
 	/**
+	 * The card path the rhythm set names in the rhythm popup were read from,
+	 * or null if no names are shown
+	 */
+	String rhythmNamesPath;
+	/**
 	 * Create a new ExportSamplesPage with the given name
 	 * @param pageName The page´s name
 	 */
@@ -237,14 +242,21 @@ public class ExportSamplesPage extends WizardPage {
 		bank.setLayoutData(fd);
 		
 		rhythm = new Combo(comp, SWT.DROP_DOWN | SWT.READ_ONLY);
-		for(int i = 1; i <= 128; i++){
-			rhythm.add("" + i);
-		}
+		rhythm.add("1");
 		rhythm.select(0);
 		fd = new FormData();
 		fd.left = new FormAttachment(bank, 0, SWT.RIGHT);
 		fd.top = new FormAttachment(bank, 0, SWT.TOP);
 		rhythm.setLayoutData(fd);
+		rhythmNamesPath = "";
+		updateRhythmList();
+		bank.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				updateRhythmList();
+			}
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
 		
 		slicesTillEnd = new Button(comp, SWT.CHECK);
 		slicesTillEnd.setText("Export single slices until end of file");
@@ -282,6 +294,7 @@ public class ExportSamplesPage extends WizardPage {
 				if(f.exists() && f.isDirectory()){
 					exportPath = path;
 					setPageComplete(true);
+					updateRhythmList();
 				}
 				else{
 					setPageComplete(false);
@@ -311,5 +324,19 @@ public class ExportSamplesPage extends WizardPage {
 		});
 		
 		pathChecker.start();
+	}
+	/**
+	 * Show the names of the card´s rhythm sets in the rhythm popup if the
+	 * card bank is selected. The user bank´s names are stored inside the
+	 * MC-909 and can´t be shown.
+	 */
+	void updateRhythmList(){
+		if(rhythm == null || rhythm.isDisposed()) return;
+		String path = bank.getSelectionIndex() == 1 ? exportPath : null;
+		if(path == null ? rhythmNamesPath == null : path.equals(rhythmNamesPath)) return;
+		rhythmNamesPath = path;
+		String[] names = path == null ? null : Mc909SoundFile.readNames(path, Mc909SoundFile.RHYTHM_SETS);
+		Mc909SoundFile.fillCombo(rhythm, 128, names, Mc909SoundFile.EMPTY_RHYTHM_SET);
+		rhythm.getParent().layout();
 	}
 }

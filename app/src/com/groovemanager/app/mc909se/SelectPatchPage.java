@@ -7,6 +7,8 @@ package com.groovemanager.app.mc909se;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
@@ -36,6 +38,14 @@ public class SelectPatchPage extends WizardPage {
 	 */
 	String patchName;
 	/**
+	 * The names of the patches in the card bank or null if unknown
+	 */
+	String[] cardPatchNames;
+	/**
+	 * Hint about the shown patch names
+	 */
+	Label namesHint;
+	/**
 	 * Create a new SelectPatchPage
 	 * @param pageName The page´s name
 	 * @param patchName The patch´s name
@@ -57,7 +67,7 @@ public class SelectPatchPage extends WizardPage {
 		this.patchName = patchName;
 	}
 	public void createControl(Composite parent) {
-		setMessage("Select the part and the patch location of the patch to be created for Sample " + patchName);
+		setMessage("Exit USB mode on the MC-909 and select the MIDI out port in the settings.\nThen select the part and the patch location of the patch to be created for Sample " + patchName);
 		setTitle("Create patch for " + patchName);
 		
 		Composite comp = new Composite(parent, SWT.NONE);
@@ -87,10 +97,33 @@ public class SelectPatchPage extends WizardPage {
 		bankSelect.select(0);
 		
 		patchSelect = new Combo(patchComp, SWT.READ_ONLY | SWT.DROP_DOWN);
-		for(int i = 0; i < 256; i++){
-			patchSelect.add("" + (i + 1));
-		}
-		setControl(comp);
+		patchSelect.add("1");
 		patchSelect.select(0);
+		
+		new Label(comp, SWT.NONE);
+		namesHint = new Label(comp, SWT.WRAP);
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.widthHint = 300;
+		namesHint.setLayoutData(gd);
+		
+		bankSelect.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				updatePatchList();
+			}
+		});
+		updatePatchList();
+		setControl(comp);
+	}
+	/**
+	 * Show the names of the patches of the selected bank, as far as they
+	 * are known
+	 */
+	private void updatePatchList(){
+		boolean card = bankSelect.getSelectionIndex() == 1;
+		Mc909SoundFile.fillCombo(patchSelect, 256, card ? cardPatchNames : null, Mc909SoundFile.EMPTY_PATCH);
+		if(!card) namesHint.setText("The names of the user patches can´t be read from the MC-909.");
+		else if(cardPatchNames == null) namesHint.setText("The card patches couldn´t be read from the memory card.");
+		else namesHint.setText("Card patch names as read from the memory card.");
+		namesHint.getParent().layout();
 	}
 }

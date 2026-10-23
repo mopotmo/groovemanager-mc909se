@@ -44,9 +44,11 @@ public class CreatePatchDialog extends WizardDialog {
 	 * otherwise
 	 * @param sampleNr The sample nr the sample was exported to.
 	 * @param stereo true, if the exported sample is stereo, false otherwise
+	 * @param cardPatchNames The names of the patches in the card bank or
+	 * null if unknown
 	 */
-	public CreatePatchDialog(Shell parentShell, String patchName, boolean isUser, int sampleNr, boolean stereo) {
-		super(parentShell, new CreatePatchWizard(patchName));
+	public CreatePatchDialog(Shell parentShell, String patchName, boolean isUser, int sampleNr, boolean stereo, String[] cardPatchNames) {
+		super(parentShell, new CreatePatchWizard(patchName, cardPatchNames));
 		wizard = (CreatePatchWizard)getWizard();
 		isStereo = stereo;
 		this.isUser = isUser;

@@ -603,11 +603,10 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 	}
 	/**
 	 * Try to export all samples that were marked for export.
-	 * @return The number of samples succesfully exported.
+	 * @return The TableItems of the samples succesfully exported.
 	 */
-	private int export() {
+	private ArrayList export() {
 		TableItem[] items = existingSamples.getItems();
-		int exported = 0;
 		ArrayList toExport = new ArrayList();
 		
 		for (int i = 0; i < items.length; i++) {
@@ -618,7 +617,6 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 					path += SMPL_FOLDER;
 					File f = export((Properties)items[i].getData(), Integer.parseInt(items[i].getText(0)), path);
 					items[i].setData(new Mc909SampleInfo(f));
-					exported ++;
 					toExport.add(items[i]);
 					items[i].setForeground(getShell().getDisplay().getSystemColor(SWT.COLOR_BLACK));
 				} catch (NumberFormatException e) {
@@ -638,13 +636,7 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 					errorMessage(e.getMessage());
 				}
 		}
-		for (Iterator iter = toExport.iterator(); iter.hasNext();) {
-			TableItem item = (TableItem) iter.next();
-			Mc909SampleInfo info = (Mc909SampleInfo)item.getData();
-			WizardDialog dialog = new CreatePatchDialog(getShell(), item.getText(1), internal.getSelection(), Integer.parseInt(item.getText(0)), info.channels > 1);
-			dialog.open();
-		}
-		return exported;
+		return toExport;
 	}
 	/**
 	 * Export one sample
@@ -703,10 +695,23 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 		d.open();
 	}
 	protected void okPressed() {
-		int exported = export();
-		System.out.println(exported);
-		MessageDialog d = new MessageDialog(getShell(), "Export finished", null, "Exported " + exported + " Samples.", SWT.ICON_INFORMATION, new String[]{"OK"}, 0);
+		ArrayList exported = export();
+		boolean patches = createPatches.getSelection() && exported.size() > 0;
+		// The card has to be read before the USB mode is left
+		String[] patchNames = patches ? Mc909SoundFile.readNames(exportPath, Mc909SoundFile.PATCHES) : null;
+		String message = "Exported " + exported.size() + " Samples.\n\n"
+			+ "Exit USB mode on the MC-909 now. The MC-909 shows exported samples as \"Unload\" until they are loaded into RAM: "
+			+ "either restart the MC-909, or select the samples in the Sample List and press Load (Shift + F3).";
+		if(patches) message += "\n\nAfter leaving USB mode, the patches will be created over MIDI.";
+		MessageDialog d = new MessageDialog(getShell(), "Export finished", null, message, SWT.ICON_INFORMATION, new String[]{"OK"}, 0);
 		d.open();
+		if(!patches) return;
+		for (Iterator iter = exported.iterator(); iter.hasNext();) {
+			TableItem item = (TableItem) iter.next();
+			Mc909SampleInfo info = (Mc909SampleInfo)item.getData();
+			WizardDialog dialog = new CreatePatchDialog(getShell(), item.getText(1), internal.getSelection(), Integer.parseInt(item.getText(0)), info.channels > 1, patchNames);
+			dialog.open();
+		}
 	}
 	protected void createButtonsForButtonBar(Composite parent) {
 		((GridLayout) parent.getLayout()).numColumns++;
