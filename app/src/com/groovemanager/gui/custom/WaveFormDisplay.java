@@ -122,7 +122,10 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 */
 	public WaveFormDisplay(Composite parent, int style, boolean gradientBackground){
 		gradient = gradientBackground;
-		comp = new Canvas(parent, style);
+		// paint() covers the whole area, so the background doesn´t need to be
+		// erased first. Erasing it makes the display flicker on Windows while
+		// the position is updated during playback.
+		comp = new Canvas(parent, style | SWT.NO_BACKGROUND | SWT.DOUBLE_BUFFERED);
 		normalCursor = new Cursor(comp.getDisplay(), SWT.CURSOR_ARROW);
 		moveMarkerCursor = new Cursor(comp.getDisplay(), SWT.CURSOR_SIZEWE);
 		editMarkerCursor = new Cursor(comp.getDisplay(), SWT.CURSOR_HAND);
