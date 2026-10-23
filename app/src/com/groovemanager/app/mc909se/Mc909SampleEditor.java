@@ -7,6 +7,7 @@ package com.groovemanager.app.mc909se;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -32,6 +33,9 @@ import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -469,6 +473,22 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		 * @param parent The parent composite
 		 * @param wt The WaveTab to which this instance should belong
 		 */
+		/**
+		 * On macOS bordered text fields can hardly be told apart from the
+		 * background, so draw a frame around them
+		 * @param t The text field
+		 */
+		private void markEditable(final Text t){
+			if(!SWT.getPlatform().equals("cocoa")) return;
+			t.getParent().addPaintListener(new PaintListener() {
+				public void paintControl(PaintEvent e) {
+					if(t.isDisposed() || !t.isVisible()) return;
+					Rectangle r = t.getBounds();
+					e.gc.setForeground(t.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+					e.gc.drawRoundRectangle(r.x - 1, r.y - 1, r.width + 1, r.height + 1, 8, 8);
+				}
+			});
+		}
 		Properties(Composite parent, WaveTab wt){
 			this.wt = wt;
 			comp = new Composite(parent, SWT.NONE);
@@ -480,7 +500,8 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			
 			// Name
 			new Label(comp, SWT.NONE).setText("Name:");
-			nameText = new Text(comp, SWT.BORDER);
+			nameText = new Text(comp, SWT.BORDER | SWT.RIGHT);
+			markEditable(nameText);
 			nameText.setTextLimit(16);
 			nameText.setText(FileManager.getNameWithoutExtension(wt.getSource()));
 			gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -511,6 +532,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			// Bars
 			new Label(comp, SWT.NONE).setText("Bars:");
 			barsText = new Text(comp, SWT.BORDER | SWT.RIGHT);
+			markEditable(barsText);
 			barsText.setText("1");
 			barsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			barsText.addFocusListener(new FocusListener() {
@@ -531,9 +553,13 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			Composite sign = new Composite(comp, SWT.NONE);
 			gd = new GridData(GridData.FILL_HORIZONTAL);
 			sign.setLayoutData(gd);
-			sign.setLayout(new FillLayout());
+			FillLayout signLayout = new FillLayout();
+			// room for the frames of markEditable()
+			signLayout.marginWidth = signLayout.marginHeight = 1;
+			sign.setLayout(signLayout);
 						
 			beatsText = new Text(sign, SWT.BORDER | SWT.RIGHT);
+			markEditable(beatsText);
 			beatsText.setText("4");
 			beatsText.addFocusListener(new FocusListener() {
 				public void focusGained(FocusEvent e) {
@@ -549,6 +575,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			});
 			new Label(sign, SWT.CENTER).setText("/");
 			denomText = new Text(sign, SWT.BORDER | SWT.RIGHT);
+			markEditable(denomText);
 			denomText.setText("4");
 			denomText.addFocusListener(new FocusListener() {
 				public void focusGained(FocusEvent e) {
@@ -569,8 +596,10 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			else bpm = Math.max(Math.min(format.getSampleRate() * 60 / (float)wt.getTotalLength() * beats, 300), 5);
 			new Label(comp, SWT.NONE).setText("BPM:");
 			bpmText = new Text(comp, SWT.BORDER | SWT.RIGHT);
+			markEditable(bpmText);
 			nf = NumberFormat.getInstance();
 			nf.setMaximumIntegerDigits(3);
+			nf.setGroupingUsed(false);
 			nf.setMinimumFractionDigits(2);
 			nf.setMaximumFractionDigits(2);
 			bpmText.setText(nf.format(bpm));
@@ -579,7 +608,13 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 				}
 				public void focusLost(FocusEvent e) {
 					try{
-						bpm = Float.parseFloat(bpmText.getText());
+						// Parse with the display format (decimal comma in
+						// some locales), but also accept a decimal point
+						String t = bpmText.getText().trim();
+						ParsePosition pos = new ParsePosition(0);
+						Number n = nf.parse(t, pos);
+						if(n != null && pos.getIndex() == t.length()) bpm = n.floatValue();
+						else bpm = Float.parseFloat(t);
 					}
 					catch(NumberFormatException ex){
 					}
