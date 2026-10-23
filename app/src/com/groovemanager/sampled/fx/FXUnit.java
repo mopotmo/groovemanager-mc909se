@@ -23,7 +23,6 @@ import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 import javax.sound.sampled.Control.Type;
 
-import com.groovemanager.spi.floatEncoding.FloatAudioFormat;
 import com.groovemanager.tools.*;
 
 /**
@@ -61,12 +60,12 @@ public class FXUnit implements Mixer {
 	 * A Float encoded 2 channel AudioFormat with NOT_SPECIFIED sample rate for
 	 * use with DataLine.Info.getFormats()
 	 */
-	public final static AudioFormat FORMAT = new FloatAudioFormat(AudioSystem.NOT_SPECIFIED, false, 2, false),
+	public final static AudioFormat FORMAT = createFloatFormat(AudioSystem.NOT_SPECIFIED),
 	/**
 	 * A Float encoded 2 channel AudioFormat with 44100Hz sample rate for
 	 * use as default AudioFormat
 	 */
-	DEFAULT_FORMAT = new FloatAudioFormat(44100, false, 2, false);
+	DEFAULT_FORMAT = createFloatFormat(44100);
 	/**
 	 * List of LineListeners
 	 */
@@ -99,7 +98,17 @@ public class FXUnit implements Mixer {
 	 * @return The new AudioFormat object
 	 */
 	protected AudioFormat createFormat(float sampleRate){
-		return new FloatAudioFormat(sampleRate, false, 2, false);
+		return createFloatFormat(sampleRate);
+	}
+	/**
+	 * Create a 32 bit float, stereo, little endian AudioFormat with the given
+	 * sample rate. Uses the PCM_FLOAT encoding built into Java Sound since
+	 * Java 7 (formerly FloatAudioFormat from the floatconversion plugin).
+	 * @param sampleRate The sample rate
+	 * @return The new AudioFormat object
+	 */
+	private static AudioFormat createFloatFormat(float sampleRate){
+		return new AudioFormat(AudioFormat.Encoding.PCM_FLOAT, sampleRate, 32, 2, 8, sampleRate, false);
 	}
 	/**
 	 * Create the RingBuffer and the needed temporary Buffers for the
@@ -498,6 +507,12 @@ public class FXUnit implements Mixer {
 			if(!isOpen()) return 0;
 			return framePosition - buffer.readAvailable();
 		}
+		/**
+		 * @see javax.sound.sampled.DataLine#getLongFramePosition()
+		 */
+		public long getLongFramePosition() {
+			return getFramePosition();
+		}
 
 		/**
 		 * @see javax.sound.sampled.DataLine#getMicrosecondPosition()
@@ -766,6 +781,12 @@ public class FXUnit implements Mixer {
 			if(!isOpen()) return 0;
 			return framePosition;
 		}
+		/**
+		 * @see javax.sound.sampled.DataLine#getLongFramePosition()
+		 */
+		public long getLongFramePosition() {
+			return getFramePosition();
+		}
 
 		/**
 		 * @see javax.sound.sampled.DataLine#getMicrosecondPosition()
@@ -1003,6 +1024,12 @@ public class FXUnit implements Mixer {
 		 */
 		public int getFramePosition() {
 			return framePosition;
+		}
+		/**
+		 * @see javax.sound.sampled.DataLine#getLongFramePosition()
+		 */
+		public long getLongFramePosition() {
+			return getFramePosition();
 		}
 
 		/**

@@ -92,7 +92,7 @@ public class ExportRhythmSetDialog extends WizardDialog {
 	}
 	protected void nextPressed() {
 		if(getCurrentPage() == wizard.exportSamplesPage){
-			wizard.exportSamplesPage.pathChecker.stop();
+			wizard.exportSamplesPage.pathChecker.interrupt();
 			
 			wizard.playSequencePage.bpm = properties.bpm;
 			if(wizard.exportSamplesPage.playSequence.getSelection()){

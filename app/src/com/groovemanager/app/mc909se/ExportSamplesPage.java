@@ -292,19 +292,21 @@ public class ExportSamplesPage extends WizardPage {
 		
 		pathChecker = new Thread(){
 			public void run() {
-				while(true){
+				while(!isInterrupted()){
 					d.asyncExec(r);
 					try{
 						sleep(1000);
 					}
-					catch(InterruptedException e){}
+					catch(InterruptedException e){
+						return;
+					}
 				}
 			}
 		};
 		
 		directory.addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent e) {
-				pathChecker.stop();
+				pathChecker.interrupt();
 			}
 		});
 		

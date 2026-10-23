@@ -726,7 +726,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 			public void widgetDisposed(DisposeEvent e) {
 				transportStop();
 				readMemory = false;
-				memoryReader.stop();
+				memoryReader.interrupt();
 			}
 		});
 		

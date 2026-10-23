@@ -129,7 +129,11 @@ public class RingBuffer {
 		int written = 0;
 		synchronized(this){
 			while(len > written && isOpen()){
-				while(writeAvailable() == 0) try{ wait(1000); } catch(InterruptedException e){}
+				while(writeAvailable() == 0 && isOpen()) try{ wait(1000); } catch(InterruptedException e){
+					Thread.currentThread().interrupt();
+					return written;
+				}
+				if(!isOpen()) break;
 				int toWrite = Math.min(len - written, writeAvailable());
 				int available = writeBuffer.remaining();
 				if(available <= toWrite){

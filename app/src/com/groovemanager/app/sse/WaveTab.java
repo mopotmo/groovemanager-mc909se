@@ -967,7 +967,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 				public void run(){
 					int numBytesRead = 0;
 					byte[] buffer = new byte[sourceLine.getBufferSize()];
-					while(numBytesRead != -1 && !getItem().isDisposed()){
+					while(numBytesRead != -1 && !getItem().isDisposed() && !isInterrupted()){
 						try {
 							numBytesRead = inStream.read(buffer, 0, buffer.length);
 						} catch (IOException e1) {
@@ -979,7 +979,9 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 						}
 						try{
 							Thread.sleep(0,1);
-						} catch(InterruptedException e){}
+						} catch(InterruptedException e){
+							return;
+						}
 					}
 				}
 			};
@@ -1012,27 +1014,27 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 			cutList.addElement(el);
 			undoOperations.add(el);
 			redoOperations.clear();
-			thread.stop();
+			thread.interrupt();
 		} catch (NotReadyException e) {
 			e.printStackTrace();
 			editor.errorMessage(e.getMessage());
-			if(thread != null) thread.stop();
+			if(thread != null) thread.interrupt();
 		} catch (NotFinishedException e) {
 			e.printStackTrace();
 			editor.errorMessage(e.getMessage());
-			if(thread != null) thread.stop();
+			if(thread != null) thread.interrupt();
 		} catch (LineUnavailableException e) {
 			e.printStackTrace();
 			editor.errorMessage(e.getMessage());
-			if(thread != null) thread.stop();
+			if(thread != null) thread.interrupt();
 		} catch (IOException e) {
 			e.printStackTrace();
 			editor.errorMessage(e.getMessage());
-			if(thread != null) thread.stop();
+			if(thread != null) thread.interrupt();
 		} catch (UnsupportedAudioFileException e) {
 			e.printStackTrace();
 			editor.errorMessage(e.getMessage());
-			if(thread != null) thread.stop();
+			if(thread != null) thread.interrupt();
 		}
 	}
 	/**

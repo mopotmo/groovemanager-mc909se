@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -22,8 +23,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
-
-import sun.misc.Service;
 
 import com.groovemanager.core.ConfigManager;
 import com.groovemanager.sampled.providers.AudioFileFormatProvider;
@@ -648,7 +647,7 @@ public class AudioManager implements IPropertyChangeListener {
 	 */
 	public List getProviders(Class c){
 		Vector p = new Vector();
-		Iterator ps = Service.providers(c);
+		Iterator ps = ServiceLoader.load(c).iterator();
 		while (ps.hasNext()) {
 			p.addElement(ps.next());
 		}

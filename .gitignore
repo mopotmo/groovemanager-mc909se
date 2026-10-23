@@ -1,3 +1,9 @@
 *.class
 .DS_Store
 Thumbs.db
+
+# Gradle
+.gradle/
+build/
+# runtime files written by the app
+app/root/error.log
