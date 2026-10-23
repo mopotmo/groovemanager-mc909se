@@ -47,6 +47,14 @@ public class CreatePatchWizard extends Wizard {
 		addPage(selectPatchPage);
 		addPage(writePatchPage);
 	}
+	/**
+	 * Finishing is only possible after the patch has been sent, otherwise
+	 * Finish would close the dialog without creating the patch
+	 * @see org.eclipse.jface.wizard.IWizard#canFinish()
+	 */
+	public boolean canFinish() {
+		return getContainer() != null && getContainer().getCurrentPage() == writePatchPage;
+	}
 	public boolean performFinish() {
 		return true;
 	}

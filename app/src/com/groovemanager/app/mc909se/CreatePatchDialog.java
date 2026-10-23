@@ -56,9 +56,10 @@ public class CreatePatchDialog extends WizardDialog {
 	}
 	protected void nextPressed() {
 		if(getCurrentPage() == wizard.selectPatchPage){
+			int part = wizard.selectPatchPage.partSelect.getSelectionIndex();
+			boolean card = wizard.selectPatchPage.bankSelect.getSelectionIndex() == 1;
+			int patchNr = wizard.selectPatchPage.patchSelect.getSelectionIndex();
 			try {
-				int part = wizard.selectPatchPage.partSelect.getSelectionIndex();
-				wizard.writePatchPage.setPart(part);
 				MIDIManager.getDefault().sendController(part, (byte)0, (byte)81);
 				byte cont;
 				if(wizard.selectPatchPage.bankSelect.getSelectionIndex() == 0) cont = 0;
@@ -80,9 +81,15 @@ public class CreatePatchDialog extends WizardDialog {
 				
 			} catch (InvalidMidiDataException e) {
 				e.printStackTrace();
+				wizard.selectPatchPage.setErrorMessage("Sending the patch failed: " + e.getMessage());
+				return;
 			} catch (MidiUnavailableException e) {
 				e.printStackTrace();
+				wizard.selectPatchPage.setErrorMessage("Sending the patch failed: " + e.getMessage());
+				return;
 			}
+			wizard.selectPatchPage.setErrorMessage(null);
+			wizard.writePatchPage.setPatch(part, card, patchNr);
 			super.nextPressed();
 		}
 		else{

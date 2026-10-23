@@ -29,6 +29,10 @@ public class WritePatchPage extends WizardPage {
 	 */
 	private int part;
 	/**
+	 * The location of the patch on which the new patch is based
+	 */
+	private String location = "";
+	/**
 	 * Create a new WritePatchPage
 	 * @param pageName The page´s name
 	 */
@@ -46,7 +50,7 @@ public class WritePatchPage extends WizardPage {
 		super(pageName, title, titleImage);
 	}
 	public void createControl(Composite parent) {
-		setMessage("The patch has been created on part " + (part + 1) + ". To keep it, write the patch on your MC909. After writing click Finish to proceed.");
+		updateMessage();
 		Composite comp = new Composite(parent, SWT.NONE);
 		comp.setLayout(new GridLayout(1, true));
 		final Image writeImg = new Image(comp.getDisplay(), FileManager.getDefault().getRootPath("909screens/write.jpg"));
@@ -83,13 +87,25 @@ public class WritePatchPage extends WizardPage {
 		setControl(comp);
 	}
 	/**
-	 * Set the part on which the patch has been created
+	 * Set the part and the location of the patch that has been created
 	 * @param part The part (between 0 and 15) on which the patch has been created
+	 * @param card true if the patch location is in the card bank, false for
+	 * the user bank
+	 * @param number The patch number (from 0)
 	 */
-	public void setPart(int part){
+	public void setPatch(int part, boolean card, int number){
 		if(part > 15) part = 15;
 		else if(part < 0) part = 0;
 		this.part = part;
-		setMessage("The patch has been created on part " + (part + 1) + ". To keep it, write the patch on your MC909. After writing click Finish to proceed.");
+		location = (card ? "Card" : "User") + " patch " + (number + 1);
+		updateMessage();
+	}
+	/**
+	 * Tell the user where the patch is and how to keep it
+	 */
+	private void updateMessage(){
+		setMessage("Part " + (part + 1) + " (MIDI channel " + (part + 1) + ") now plays the new patch, which is not stored yet. "
+			+ "To keep it, write it on the MC-909, e.g. to " + location + ". Then click Finish.\n"
+			+ "If part " + (part + 1) + " didn't change: check that it receives on MIDI channel " + (part + 1) + " and that the MC-909 accepts SysEx messages.");
 	}
 }

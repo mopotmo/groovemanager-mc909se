@@ -254,13 +254,7 @@ public class MIDIManager implements IPropertyChangeListener{
 		if(outDevice != null) return outDevice;
 		
 		String port = configManager.getPrefStore().getString("midi_out");
-		MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
-		MidiDevice.Info info = null;
-		for(int i = 0; i < infos.length; i++){
-			if(infos[i].getName().equals(port)) info = infos[i];
-		}
-		if(info == null) throw new MidiUnavailableException("Midi Device not found. Check settings.");
-		outDevice = MidiSystem.getMidiDevice(info);
+		outDevice = findDevice(port, true);
 		return outDevice;
 	}
 	/**
@@ -273,14 +267,26 @@ public class MIDIManager implements IPropertyChangeListener{
 		if(inDevice != null) return inDevice;
 		
 		String port = configManager.getPrefStore().getString("midi_in");
-		MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
-		MidiDevice.Info info = null;
-		for(int i = 0; i < infos.length; i++){
-			if(infos[i].getName().equals(port)) info = infos[i];
-		}
-		if(info == null) throw new MidiUnavailableException("Midi Device not found. Check settings.");
-		inDevice = MidiSystem.getMidiDevice(info);
+		inDevice = findDevice(port, false);
 		return inDevice;
+	}
+	/**
+	 * Find a MIDI device by its name. The input and the output of an
+	 * interface often have the same name, so the direction is checked, too.
+	 * @param name The name of the device
+	 * @param output true for an output device (that has receivers), false
+	 * for an input device (that has transmitters)
+	 * @return The device
+	 * @throws MidiUnavailableException If no such device exists
+	 */
+	private static MidiDevice findDevice(String name, boolean output) throws MidiUnavailableException{
+		MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
+		for(int i = 0; i < infos.length; i++){
+			if(!infos[i].getName().equals(name)) continue;
+			MidiDevice device = MidiSystem.getMidiDevice(infos[i]);
+			if((output ? device.getMaxReceivers() : device.getMaxTransmitters()) != 0) return device;
+		}
+		throw new MidiUnavailableException("MIDI " + (output ? "output" : "input") + " \"" + name + "\" not found. Check the MIDI settings.");
 	}
 	/**
 	 * 

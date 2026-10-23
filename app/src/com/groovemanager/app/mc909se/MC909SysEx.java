@@ -245,7 +245,8 @@ public class MC909SysEx {
 			total += data[i];
 			message[6 + i] = data[i];
 		}
-		message[message.length - 2] = 128 - (total % 128);
+		// Roland checksum: data + checksum must be 0 modulo 128
+		message[message.length - 2] = (128 - (total % 128)) % 128;
 		message[message.length - 1] = 0xF7;
 		return message;
 	}

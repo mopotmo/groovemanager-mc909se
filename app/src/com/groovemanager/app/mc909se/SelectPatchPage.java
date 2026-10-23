@@ -73,7 +73,7 @@ public class SelectPatchPage extends WizardPage {
 		Composite comp = new Composite(parent, SWT.NONE);
 		comp.setLayout(new GridLayout(2, false));
 		
-		new Label(comp, SWT.NONE).setText("Part");
+		new Label(comp, SWT.NONE).setText("Part (MIDI channel)");
 		
 		partSelect = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
 		for(int i = 0; i < 16; i++){
@@ -81,7 +81,7 @@ public class SelectPatchPage extends WizardPage {
 		}
 		partSelect.select(0);
 		
-		new Label(comp, SWT.NONE).setText("Patch");
+		new Label(comp, SWT.NONE).setText("Patch location");
 		
 		Composite patchComp = new Composite(comp, SWT.NONE);
 		GridLayout gl = new GridLayout(2, false);
@@ -124,6 +124,6 @@ public class SelectPatchPage extends WizardPage {
 		if(!card) namesHint.setText("The names of the user patches can't be read from the MC-909.");
 		else if(cardPatchNames == null) namesHint.setText("The card patches couldn't be read from the memory card.");
 		else namesHint.setText("Card patch names as read from the memory card.");
-		namesHint.getParent().layout();
+		namesHint.getParent().layout(true, true);
 	}
 }
