@@ -90,6 +90,7 @@ What was changed for the revival (see the `Revival:` commits):
 - The waveform is drawn in paint events through an off-screen image. Drawing directly on the control and XOR drawing crash on current macOS. The selection is now drawn semi-transparent.
 - `FileManager` takes the resource directory from the system property `groovemanager.root` if set (used by the installers) and then logs to `~/.groovemanager/error.log`.
 - macOS: ⌘ instead of Ctrl for shortcuts and marker editing, space for play/stop anywhere in the window, edit actions are updated on every change (macOS doesn't open the menu for shortcuts), file drops from the Finder, and workarounds for SWT layout problems (tab labels, info panels, right bar).
+- Themes under *Settings → Appearance*: MC-909 (default, in the colors of the device), MC-909 Editor (after Roland's editor), Modern (dark) and Classic (the 2004 look). They switch live. The MC-909 themes draw their buttons, text fields and dropdowns themselves, because native controls can't be colored on macOS; they can be used with the keyboard and VoiceOver.
 
 ## Original 2004 build
 
