@@ -70,16 +70,17 @@ public class RLNDChunk extends WaveChunk implements SMPLChunk{
 	 * @see com.groovemanager.sampled.providers.SMPLChunk#setSampleName(java.lang.String)
 	 */
 	public void setSampleName(String s) {
-		byte[] b;
-		if(s.length() == 16) b= s.getBytes();
-		else if(s.length() < 16){
-			b = new byte[16];
-			System.arraycopy(s.getBytes(), 0, b, 0, s.length());
+		// The MC-909 pads names with spaces. ASCII keeps one byte per
+		// character, the system charset may not.
+		byte[] b = new byte[16];
+		java.util.Arrays.fill(b, (byte)' ');
+		byte[] name;
+		try {
+			name = s.getBytes("US-ASCII");
+		} catch (java.io.UnsupportedEncodingException e) {
+			name = s.getBytes();
 		}
-		else{
-			b = new byte[16];
-			System.arraycopy(s.getBytes(), 0, b, 0, 16);
-		}
+		System.arraycopy(name, 0, b, 0, Math.min(name.length, 16));
 		chunkData.position(12);
 		chunkData.put(b, 0, 16);
 	}
