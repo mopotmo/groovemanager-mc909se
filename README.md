@@ -30,7 +30,7 @@ There are two applications:
 ![MC-909 pads](docs/screenshots/mc909-pads.png)
 
 Also part of the thesis:
-- **Java Sound plugins:** [jsASIO](https://github.com/mopotmo/jsasio) (ASIO drivers as Java Sound mixers), [jsREX](https://github.com/mopotmo/jsrex) (ReCycle file reader), and `floatconversion` (a `PCM_FLOAT` encoding plus conversions, in this repo).
+- **Java Sound plugins:** [jsASIO](https://github.com/mopotmo/jsasio) (ASIO drivers as Java Sound mixers), [jsREX](https://github.com/mopotmo/jsrex) (ReCycle file reader), and [floatconversion](https://github.com/mopotmo/floatconversion) (a `PCM_FLOAT` encoding plus conversions).
 - **A separate plugin interface** (`com.groovemanager.sampled.providers`, managed by `AudioManager`) for reading file formats and writing audio files. It works around weaknesses of Java Sound's `AudioFileReader`/`AudioFileWriter` SPIs. Providers declare their supported types, formats and property keys, and `AudioManager` chooses the best match.
 
 Both editors were tested on Windows and Linux in 2004.
@@ -44,7 +44,6 @@ Both editors were tested on Windows and Linux in 2004.
 | `app/src/com/groovemanager/app/mc909se`, `gui/custom/mc909` | MC-909 Sample Editor, released as `start.jar` (main class `com.groovemanager.app.mc909se.Starter`) |
 | `app/resources/META-INF` | Manifest and service registrations of the released `start.jar` |
 | `app/root` | Icons and MC-909 screen images. The app loads them from `./root` at runtime |
-| `plugins/floatconversion` | Java Sound `FormatConversionProvider` for float PCM, released as `floatconversion.jar` |
 | `docs/install` | Original installation notes (German) |
 | `docs/thesis/diplomarbeit.pdf` | The diploma thesis (German, 106 pages). Chapter VI describes the editors and plugins in detail |
 | `docs/screenshots` | Screenshots from the thesis |
@@ -53,6 +52,7 @@ Both editors were tested on Windows and Linux in 2004.
 Related repositories:
 - [jsASIO](https://github.com/mopotmo/jsasio): ASIO `MixerProvider` for Java Sound (Windows)
 - [jsREX](https://github.com/mopotmo/jsrex): ReCycle file reader for Java Sound (Windows)
+- [floatconversion](https://github.com/mopotmo/floatconversion): `PCM_FLOAT` encoding and conversions for Java Sound. It was part of this repository up to v1.0
 
 ## Building
 
