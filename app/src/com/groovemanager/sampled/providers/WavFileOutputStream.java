@@ -123,7 +123,7 @@ public class WavFileOutputStream extends AudioFileOutputStream {
 		// Sampling Rate (in Hz)
 		header.putInt((int)format.getSampleRate());
 		// Bytes pro Sekunde
-		header.putInt((int)(format.getSampleRate() * format.getSampleSizeInBits() / 8));
+		header.putInt((int)(format.getSampleRate() * format.getSampleSizeInBits() * format.getChannels() / 8));
 		// Bytes pro Sample
 		header.putShort((short)(format.getSampleSizeInBits() * format.getChannels() / 8));
 		// Bits pro Sample
@@ -141,7 +141,7 @@ public class WavFileOutputStream extends AudioFileOutputStream {
 	 */
 	private void writeHeader() throws IOException{
 		initHeader();
-		header.putInt(4, written + chunklength + 80);
+		header.putInt(4, written + chunklength + 36);
 		header.putInt(40, written);
 		out.close();
 		RandomAccessFile rafile = new RandomAccessFile(outputFile, "rw");
