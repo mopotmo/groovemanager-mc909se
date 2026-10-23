@@ -77,12 +77,12 @@ public abstract class MarkableWaveFormDisplay extends SelectableWaveFormDisplay 
 	 */
 	protected void removeMarker(Marker m){
 		if(selectedMarker == m) deselectMarker();
+		eraseMarker(m);
+		markers.remove(m);
 		for (Iterator iter = markableListeners.iterator(); iter.hasNext();) {
 			MarkableListener listener = (MarkableListener) iter.next();
 			listener.markerRemoved(this, m);
 		}
-		eraseMarker(m);
-		markers.remove(m);
 	}
 	/**
 	 * @see com.groovemanager.sampled.waveform.Markable#removeMarkerIndex(int)

@@ -210,7 +210,7 @@ public class ExportSamplesPage extends WizardPage {
 		usbSelect.setLayoutData(fd);
 
 		l = new Label(comp, SWT.NONE);
-		l.setText("Create on part");
+		l.setText("Part (MIDI channel)");
 		fd = new FormData();
 		fd.left = new FormAttachment(usbSelect, 0, SWT.LEFT);
 		fd.top = new FormAttachment(usbSelect, 15, SWT.BOTTOM);

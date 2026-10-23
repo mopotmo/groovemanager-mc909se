@@ -4,6 +4,7 @@
  */
 package com.groovemanager.app.mc909se;
 
+import org.eclipse.jface.wizard.IWizardContainer2;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -90,12 +91,23 @@ public class OnlyMessagePage extends WizardPage {
 		setControl(comp);
 	}
 	/**
+	 * Enlarge the dialog if the text or the image don´t fit
+	 * @see org.eclipse.jface.dialogs.IDialogPage#setVisible(boolean)
+	 */
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+		if(visible && getContainer() instanceof IWizardContainer2) ((IWizardContainer2)getContainer()).updateSize();
+	}
+	/**
 	 * Set the message text
 	 * @param text The message to set
 	 */
 	public void setMessageText(String text){
 		messageText = text;
-		if(messageLabel != null && !messageLabel.isDisposed()) messageLabel.setText(text);
+		if(messageLabel != null && !messageLabel.isDisposed()){
+			messageLabel.setText(text);
+			messageLabel.getParent().layout();
+		}
 	}
 	/**
 	 * Set the image to be displayed besides the message text

@@ -164,9 +164,10 @@ public class ExportRhythmSetDialog extends WizardDialog {
 			int samplePos = maxNr + 2;
 			for (int i = 0; i < markers.length && i < 16; i++) {
 				int startPos = markers[i].getPosition();
+				if(startPos >= wt.getTotalLength()) break;
 				int endPos;
 				if(i + 1 == markers.length || wizard.exportSamplesPage.slicesTillEnd.getSelection()) endPos = wt.getTotalLength(); 
-				else endPos = markers[i + 1].getPosition();
+				else endPos = Math.min(markers[i + 1].getPosition(), wt.getTotalLength());
 				wt.getWaveDisplay().setSelection(new Selection(startPos, endPos));
 				wt.getWaveDisplay().setPosition(startPos);
 				try {
@@ -205,17 +206,26 @@ public class ExportRhythmSetDialog extends WizardDialog {
 				} catch (NotReadyException e) {
 					e.printStackTrace();
 					close();
+					return;
 				} catch (UnsupportedAudioFileException e) {
 					e.printStackTrace();
 					close();
+					return;
 				} catch (IOException e) {
 					e.printStackTrace();
 					close();
+					return;
 				} catch (NotFinishedException e) {
 					e.printStackTrace();
 				}
 				wizard.createRhythmSetPage.setMessage("The samples have been exported.", WizardPage.INFORMATION);
 			}
+			int part = wizard.exportSamplesPage.part.getSelectionIndex() + 1;
+			wizard.createRhythmSetPage.setMessageText("Exported " + samples + " slices as " + destName + " samples " + (maxNr + 2) + " to " + (samplePos - 1) + ".\n\n"
+				+ "Exit USB mode on the MC-909 and load the new samples into RAM: restart the MC-909, or select the samples in the Sample List and press Load (Shift + F3). "
+				+ "The MC-909 shows them as \"Unload\" until then.\n\n"
+				+ "When the MC-909 is ready, press Next to create the rhythm set on part " + part + " over MIDI. "
+				+ "The MC-909 must be connected to the MIDI out port selected in the settings.");
 			if(wizard.exportSamplesPage.createSequence.getSelection()) try {
 				String file = createMidiFile();
 				wizard.createRhythmSetPage.setMessage("The samples have been exported and the SMF file with the sequence has been generated as " + file + ".\n", WizardPage.INFORMATION);
@@ -260,7 +270,11 @@ public class ExportRhythmSetDialog extends WizardDialog {
 				String destination;
 				if(wizard.exportSamplesPage.bank.getSelectionIndex() == 0) destination = "User";
 				else destination = "Card";
-				wizard.playSequencePage.setMessage("The Rhythm set has been created on part " + (wizard.exportSamplesPage.part.getSelectionIndex() + 1) + " as " + destination + " " + (wizard.exportSamplesPage.rhythm.getSelectionIndex() + 1) + ". To keep it you have to save it manually on your MC-909.", WizardPage.INFORMATION);
+				int part = channel + 1;
+				wizard.playSequencePage.setMessage("The rhythm set has been sent to part " + part + ".", WizardPage.INFORMATION);
+				wizard.playSequencePage.setResultText("Part " + part + " (MIDI channel " + part + ") now plays the new rhythm set, which is not stored yet. "
+					+ "To keep it, write it on the MC-909, e.g. to " + destination + " rhythm set " + (wizard.exportSamplesPage.rhythm.getSelectionIndex() + 1) + ".\n\n"
+					+ "If part " + part + " didn't change: check that it receives on MIDI channel " + part + ", that the MC-909 accepts SysEx messages, and that it had finished loading the samples.");
 				wizard.playSequencePage.setImage(FileManager.getDefault().getRootPath("909screens/write.jpg"));
 			} catch (InvalidMidiDataException e) {
 				e.printStackTrace();

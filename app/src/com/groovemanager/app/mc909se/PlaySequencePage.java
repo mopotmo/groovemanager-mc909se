@@ -52,6 +52,10 @@ public class PlaySequencePage extends OnlyMessagePage {
 	 */
 	boolean visible = true;
 	/**
+	 * Text describing the result of the rhythm set creation
+	 */
+	private String resultText = "";
+	/**
 	 * Text to display when the play button is visible
 	 */
 	final static String VISIBLE_TEXT = "You can now transmit the slice sequence to your MC-909 via MIDI. " +
@@ -130,7 +134,24 @@ public class PlaySequencePage extends OnlyMessagePage {
 	public void setPlayVisible(boolean visible){
 		this.visible = visible;
 		if(play != null && !play.isDisposed()) play.setVisible(visible);
-		if(visible) setMessageText(VISIBLE_TEXT);
-		else setMessageText(INVISIBLE_TEXT);
+		updateText();
+	}
+	/**
+	 * Set the text describing the result of the rhythm set creation, which is
+	 * shown above the instructions for the sequence
+	 * @param text The result text
+	 */
+	public void setResultText(String text){
+		resultText = text;
+		updateText();
+	}
+	/**
+	 * Combine the result text and the text for the play button
+	 */
+	private void updateText(){
+		String text = visible ? VISIBLE_TEXT : INVISIBLE_TEXT;
+		if(resultText.length() > 0 && text.length() > 0) text = resultText + "\n\n" + text;
+		else if(resultText.length() > 0) text = resultText;
+		setMessageText(text);
 	}
 }

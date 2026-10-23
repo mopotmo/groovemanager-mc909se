@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -182,6 +183,11 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 	 * CutListElements corresponding to the redoOperations
 	 */
 	protected ArrayList redoElements = new ArrayList();
+	/**
+	 * The markers before and after each edit operation, keyed by the
+	 * operation in undoOperations/redoOperations
+	 */
+	private IdentityHashMap markersBefore = new IdentityHashMap(), markersAfter = new IdentityHashMap();
 	/**
 	 * Runnable for thread-safe redrawing of the WaveForm
 	 */
@@ -576,6 +582,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		Selection sel = waveDisplay.getSelection();
 		int pos = sel.getLeft();
 		cutList.addElement(new DeleteElement(sel.getLeft(), sel.getRight() - sel.getLeft()));
+		shiftMarkers(sel.getLeft(), sel.getRight() - sel.getLeft(), 0);
 		waveDisplay.setSelection(new Selection(0));
 		waveDisplay.setPosition(pos);
 	}
@@ -586,6 +593,8 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 	public void performTrim(){
 		Selection sel = waveDisplay.getSelection();
 		int pos = sel.getLeft();
+		shiftMarkers(sel.getRight(), cutList.getLength() - sel.getRight(), 0);
+		shiftMarkers(0, sel.getLeft(), 0);
 		cutList.addElement(new DeleteElement(0, sel.getLeft()));
 		cutList.addElement(new DeleteElement(sel.getRight() - sel.getLeft(), cutList.getLength() - sel.getRight() + sel.getLeft()));
 		waveDisplay.setSelection(new Selection(0, cutList.getLength()));
@@ -701,6 +710,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 			cutList.addElement((CutListElement)lastOperation);
 			redoElements.remove(lastOperation);
 		}
+		if(markersAfter.containsKey(lastOperation)) setMarkers((Marker[])markersAfter.get(lastOperation));
 		undoOperations.add(lastOperation);
 		redoOperations.remove(lastOperation);
 	}
@@ -731,6 +741,10 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		else if(lastOperation instanceof CutListElement){
 			cutList.removeLastElement();
 			redoElements.add(lastOperation);
+		}
+		if(markersBefore.containsKey(lastOperation)){
+			markersAfter.put(lastOperation, copyMarkers());
+			setMarkers((Marker[])markersBefore.get(lastOperation));
 		}
 		redoOperations.add(lastOperation);
 		undoOperations.remove(lastOperation);
@@ -770,6 +784,7 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 		int pos = waveDisplay.getSelection().getLeft();
 		performDelete();
 		cutList.addElement(new InsertElement(source, pos));
+		shiftMarkers(pos, 0, source.getLength());
 	}
 	/**
 	 * Create a clone of the current CutList to be used as clipboard source
@@ -837,11 +852,13 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 	 */
 	public void editAction(int type){
 		Selection sel = waveDisplay.getSelection(); 
+		Marker[] before;
 		switch (type) {
 			case EditAction.DELETE :
 				if(sel.getRight() <= sel.getLeft()) return;
+				before = copyMarkers();
 				performDelete();
-				undoOperations.add(new Integer(type));
+				addUndoOperation(new Integer(type), before);
 				redoOperations.clear();
 				redoElements.clear();
 				break;
@@ -862,16 +879,18 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 				
 			case EditAction.CUT :
 				if(sel.getRight() <= sel.getLeft()) return;
+				before = copyMarkers();
 				performCut();
-				undoOperations.add(new Integer(type));
+				addUndoOperation(new Integer(type), before);
 				redoOperations.clear();
 				redoElements.clear();
 				break;
 				
 			case EditAction.PASTE :
 				try {
+					before = copyMarkers();
 					performPaste();
-					undoOperations.add(new Integer(type));
+					addUndoOperation(new Integer(type), before);
 					redoOperations.clear();
 					redoElements.clear();
 				} catch (DifferentChannelException e) {
@@ -882,8 +901,9 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 				
 			case EditAction.TRIM :
 				if(sel.getRight() <= sel.getLeft()) return;
+				before = copyMarkers();
 				performTrim();
-				undoOperations.add(new Integer(type));
+				addUndoOperation(new Integer(type), before);
 				redoOperations.clear();
 				redoElements.clear();
 				break;
@@ -929,6 +949,63 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 	 */
 	public AudioFileFormat getFileFormat(){
 		return fileFormat;
+	}
+	/**
+	 * Remember an edit operation for undo
+	 * @param operation The operation to add to undoOperations
+	 * @param before The markers before the operation
+	 */
+	private void addUndoOperation(Integer operation, Marker[] before){
+		undoOperations.add(operation);
+		markersBefore.put(operation, before);
+		redoOperations.clear();
+		redoElements.clear();
+	}
+	/**
+	 * Copy the current markers
+	 * @return Copies of all markers of the WaveFormDisplay
+	 */
+	private Marker[] copyMarkers(){
+		Marker[] markers = waveDisplay.getMarkers();
+		Marker[] copy = new Marker[markers.length];
+		for (int i = 0; i < markers.length; i++) {
+			copy[i] = new Marker(markers[i].getPosition(), markers[i].getName());
+		}
+		return copy;
+	}
+	/**
+	 * Replace all markers of the WaveFormDisplay
+	 * @param newMarkers The new markers
+	 */
+	private void setMarkers(Marker[] newMarkers){
+		Marker[] markers = waveDisplay.getMarkers();
+		for (int i = 0; i < markers.length; i++) {
+			waveDisplay.removeMarker(markers[i].getPosition(), markers[i].getName());
+		}
+		for (int i = 0; i < newMarkers.length; i++) {
+			waveDisplay.addMarker(newMarkers[i].getPosition(), newMarkers[i].getName());
+		}
+	}
+	/**
+	 * Adapt the markers to a change of the audio data. Markers inside the
+	 * removed range are deleted, markers behind it are moved.
+	 * @param start The start of the change in sample frames
+	 * @param removed The number of removed sample frames
+	 * @param inserted The number of inserted sample frames
+	 */
+	private void shiftMarkers(int start, int removed, int inserted){
+		Marker[] markers = waveDisplay.getMarkers();
+		ArrayList result = new ArrayList();
+		boolean changed = false;
+		for (int i = 0; i < markers.length; i++) {
+			int pos = markers[i].getPosition();
+			if(pos < start) result.add(new Marker(pos, markers[i].getName()));
+			else{
+				changed = true;
+				if(pos >= start + removed) result.add(new Marker(pos - removed + inserted, markers[i].getName()));
+			}
+		}
+		if(changed) setMarkers((Marker[])result.toArray(new Marker[result.size()]));
 	}
 	/**
 	 * Get the slices contained in this WabeTab

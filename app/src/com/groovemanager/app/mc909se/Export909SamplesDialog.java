@@ -771,13 +771,23 @@ public class Export909SamplesDialog extends TitleAreaDialog {
 			+ "Exit USB mode on the MC-909 now. The MC-909 shows exported samples as \"Unload\" until they are loaded into RAM: "
 			+ "either restart the MC-909, or select the samples in the Sample List and press Load (Shift + F3).";
 		if(patches) message += "\n\nAfter leaving USB mode, the patches will be created over MIDI.";
+		// Leaving USB mode reloads the table while the message is open, which
+		// disposes the exported items, so keep their values
+		String[] names = new String[exported.size()];
+		int[] numbers = new int[exported.size()];
+		boolean[] stereo = new boolean[exported.size()];
+		for (int i = 0; i < names.length; i++) {
+			TableItem item = (TableItem)exported.get(i);
+			names[i] = item.getText(1);
+			numbers[i] = Integer.parseInt(item.getText(0));
+			stereo[i] = ((Mc909SampleInfo)item.getData()).channels > 1;
+		}
+		boolean isUser = internal.getSelection();
 		MessageDialog d = new MessageDialog(getShell(), "Export finished", null, message, SWT.ICON_INFORMATION, new String[]{"OK"}, 0);
 		d.open();
 		if(!patches) return;
-		for (Iterator iter = exported.iterator(); iter.hasNext();) {
-			TableItem item = (TableItem) iter.next();
-			Mc909SampleInfo info = (Mc909SampleInfo)item.getData();
-			WizardDialog dialog = new CreatePatchDialog(getShell(), item.getText(1), internal.getSelection(), Integer.parseInt(item.getText(0)), info.channels > 1, patchNames);
+		for (int i = 0; i < names.length; i++) {
+			WizardDialog dialog = new CreatePatchDialog(getShell(), names[i], isUser, numbers[i], stereo[i], patchNames);
 			dialog.open();
 		}
 	}
