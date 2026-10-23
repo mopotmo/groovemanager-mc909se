@@ -79,13 +79,13 @@ The app runs from the `app` directory and loads its icons from `app/root`. Error
 
 `./gradlew jpackage` builds the installer for the current platform into `build/jpackage/output` (dmg, msi or deb; the msi needs [WiX](https://wixtoolset.org)). The GitHub workflow `.github/workflows/installers.yml` builds all of them for a `v*` tag. The app icon is drawn by `packaging/icon/IconGenerator.java`.
 
-Tested on macOS (Apple Silicon). Windows and Linux should work but haven't been tested yet. Not working or untested:
-- **MIDI on macOS:** Java's built-in MIDI on macOS doesn't support SysEx, so creating patches on the MC-909 and the MIDI preview are untested. A missing MIDI device only produces warnings in the log.
+Tested on macOS (Apple Silicon) and Windows. On macOS it was also tested with a Roland MC-909: exporting samples in USB storage mode, and creating patches and rhythm sets over MIDI. Linux should work but hasn't been tested yet. Not working or untested:
 - **ASIO and REX:** the plugins are 32-bit Windows DLLs and can't be loaded by a current 64-bit JVM.
 
 What was changed for the revival (see the `Revival:` commits):
 - Gradle build (Java 25 toolchain, SWT 3.135 / JFace 3.40 from Maven Central).
 - `java.util.ServiceLoader` instead of the removed `sun.misc.Service`, and Java's built-in `PCM_FLOAT` encoding instead of the floatconversion plugin.
+- MIDI through [CoreMIDI4J](https://github.com/DerekCook/CoreMidi4J) on macOS, because Java's built-in MIDI there doesn't send SysEx messages. MIDI devices are found when they are plugged in while the app runs.
 - `Thread.interrupt()` instead of `Thread.stop()`, which throws since Java 20.
 - The waveform is drawn in paint events through an off-screen image. Drawing directly on the control and XOR drawing crash on current macOS. The selection is now drawn semi-transparent.
 - `FileManager` takes the resource directory from the system property `groovemanager.root` if set (used by the installers) and then logs to `~/.groovemanager/error.log`.
