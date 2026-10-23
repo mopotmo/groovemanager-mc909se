@@ -4,12 +4,25 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.accessibility.ACC;
+import org.eclipse.swt.accessibility.AccessibleActionAdapter;
+import org.eclipse.swt.accessibility.AccessibleActionEvent;
+import org.eclipse.swt.accessibility.AccessibleAdapter;
+import org.eclipse.swt.accessibility.AccessibleControlAdapter;
+import org.eclipse.swt.accessibility.AccessibleControlEvent;
+import org.eclipse.swt.accessibility.AccessibleEvent;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.TraverseEvent;
+import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
@@ -78,6 +91,60 @@ public class ThemeButton extends Composite implements ThemeListener{
 				if(button == null) paintKey(e.gc);
 			}
 		});
+		// keyboard: Tab moves the focus, Space and Return press the button
+		addTraverseListener(new TraverseListener() {
+			public void keyTraversed(TraverseEvent e) {
+				if(button != null) return;
+				if(e.detail == SWT.TRAVERSE_RETURN){
+					e.doit = false;
+					fireSelection();
+				}
+				else if(e.detail == SWT.TRAVERSE_TAB_NEXT || e.detail == SWT.TRAVERSE_TAB_PREVIOUS) e.doit = true;
+			}
+		});
+		addKeyListener(new KeyListener() {
+			public void keyPressed(KeyEvent e) {
+				if(button == null && e.character == ' ') fireSelection();
+			}
+			public void keyReleased(KeyEvent e) {
+			}
+		});
+		addFocusListener(new FocusListener() {
+			public void focusGained(FocusEvent e) {
+				redraw();
+			}
+			public void focusLost(FocusEvent e) {
+				redraw();
+			}
+		});
+		// screen readers announce a drawn button like a native one
+		getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			public void getName(AccessibleEvent e) {
+				e.result = text.length() > 0 ? text : getToolTipText();
+			}
+		});
+		getAccessible().addAccessibleControlListener(new AccessibleControlAdapter() {
+			public void getRole(AccessibleControlEvent e) {
+				e.detail = ACC.ROLE_PUSHBUTTON;
+			}
+			public void getState(AccessibleControlEvent e) {
+				e.detail = ACC.STATE_FOCUSABLE;
+				if(isFocusControl()) e.detail |= ACC.STATE_FOCUSED;
+				if(!isEnabled()) e.detail |= ACC.STATE_DISABLED;
+			}
+		});
+		getAccessible().addAccessibleActionListener(new AccessibleActionAdapter() {
+			public void getActionCount(AccessibleActionEvent e) {
+				e.count = 1;
+			}
+			public void getName(AccessibleActionEvent e) {
+				e.result = "press";
+			}
+			public void doAction(AccessibleActionEvent e) {
+				if(isEnabled()) fireSelection();
+				e.result = ACC.OK;
+			}
+		});
 		addMouseListener(new MouseListener() {
 			public void mouseDoubleClick(MouseEvent e) {
 			}
@@ -112,6 +179,7 @@ public class ThemeButton extends Composite implements ThemeListener{
 			button.setText(text);
 			button.setImage(image);
 			button.setEnabled(isEnabled());
+			button.setToolTipText(getToolTipText());
 			button.addSelectionListener(new SelectionListener() {
 				public void widgetSelected(SelectionEvent e) {
 					fireSelection();
@@ -137,6 +205,13 @@ public class ThemeButton extends Composite implements ThemeListener{
 		gc.fillRoundRectangle(r.x, r.y, r.width, r.height, arc, arc);
 		gc.setForeground(theme.getButtonEdge());
 		gc.drawRoundRectangle(r.x, r.y, r.width - 1, r.height - 1, arc, arc);
+		if(isFocusControl()){
+			// a focus ring in the system accent color, inside the button
+			gc.setLineWidth(2);
+			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
+			gc.drawRoundRectangle(r.x + 1, r.y + 1, r.width - 2, r.height - 2, arc, arc);
+			gc.setLineWidth(1);
+		}
 		int cy = r.y + r.height / 2;
 		if(image != null){
 			Rectangle b = image.getBounds();
@@ -229,6 +304,13 @@ public class ThemeButton extends Composite implements ThemeListener{
 		this.image = image;
 		if(button != null) button.setImage(image);
 		redraw();
+	}
+	/**
+	 * @see org.eclipse.swt.widgets.Control#setToolTipText(java.lang.String)
+	 */
+	public void setToolTipText(String string) {
+		super.setToolTipText(string);
+		if(button != null) button.setToolTipText(string);
 	}
 	/**
 	 * Push buttons have no selection, kept for compatibility with Button

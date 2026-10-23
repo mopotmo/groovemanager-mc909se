@@ -33,18 +33,13 @@ import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.events.PaintEvent;
-import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
 
 import com.groovemanager.actions.ConfigAction;
 import com.groovemanager.app.sse.SimpleSampleEditor;
@@ -55,6 +50,8 @@ import com.groovemanager.gui.Spacing;
 import com.groovemanager.gui.custom.Frames;
 import com.groovemanager.gui.custom.KeyboardKeyListener;
 import com.groovemanager.gui.custom.ThemeButton;
+import com.groovemanager.gui.custom.ThemeCombo;
+import com.groovemanager.gui.custom.ThemeText;
 import com.groovemanager.gui.custom.mc909.Mc909KeyComposite;
 import com.groovemanager.gui.theme.Theme;
 import com.groovemanager.gui.theme.ThemeListener;
@@ -440,7 +437,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		/**
 		 * Popup for user selection of the loop mode
 		 */
-		Combo loopMode,
+		ThemeCombo loopMode,
 		/**
 		 * Popup for user selection of the timestretch type
 		 */
@@ -448,7 +445,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		/**
 		 * Text fields for user input
 		 */
-		Text nameText, bpmText, beatsText, denomText, barsText;
+		ThemeText nameText, bpmText, beatsText, denomText, barsText;
 		/**
 		 * Main composite
 		 */
@@ -486,22 +483,6 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 		 * @param parent The parent composite
 		 * @param wt The WaveTab to which this instance should belong
 		 */
-		/**
-		 * On macOS bordered text fields can hardly be told apart from the
-		 * background, so draw a frame around them
-		 * @param t The text field
-		 */
-		private void markEditable(final Text t){
-			if(!SWT.getPlatform().equals("cocoa")) return;
-			t.getParent().addPaintListener(new PaintListener() {
-				public void paintControl(PaintEvent e) {
-					if(t.isDisposed() || !t.isVisible()) return;
-					Rectangle r = t.getBounds();
-					e.gc.setForeground(t.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
-					e.gc.drawRoundRectangle(r.x - 1, r.y - 1, r.width + 1, r.height + 1, 8, 8);
-				}
-			});
-		}
 		Properties(Composite parent, WaveTab wt){
 			this.wt = wt;
 			comp = new Composite(parent, SWT.NONE);
@@ -513,8 +494,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			
 			// Name
 			new Label(comp, SWT.NONE).setText("Name:");
-			nameText = new Text(comp, SWT.BORDER | SWT.RIGHT);
-			markEditable(nameText);
+			nameText = new ThemeText(comp, SWT.RIGHT);
 			nameText.setTextLimit(16);
 			nameText.setText(FileManager.getNameWithoutExtension(wt.getSource()));
 			gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -522,7 +502,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			
 			// LoopMode
 			new Label(comp, SWT.NONE).setText("Loop Mode:");
-			loopMode = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+			loopMode = new ThemeCombo(comp);
 			loopMode.add("FWD");
 			loopMode.add("ONE-SHOT");
 			loopMode.add("REV");
@@ -533,7 +513,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			
 			// TimeStretchType
 			new Label(comp, SWT.NONE).setText("TS Type:");
-			timeStretchType = new Combo(comp, SWT.READ_ONLY | SWT.DROP_DOWN);
+			timeStretchType = new ThemeCombo(comp);
 			for(int i = 1; i < 10; i++){
 				timeStretchType.add("TYPE0" + i);
 			}
@@ -544,8 +524,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			
 			// Bars
 			new Label(comp, SWT.NONE).setText("Bars:");
-			barsText = new Text(comp, SWT.BORDER | SWT.RIGHT);
-			markEditable(barsText);
+			barsText = new ThemeText(comp, SWT.RIGHT);
 			barsText.setText("1");
 			barsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			barsText.addFocusListener(new FocusListener() {
@@ -566,13 +545,9 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			Composite sign = new Composite(comp, SWT.NONE);
 			gd = new GridData(GridData.FILL_HORIZONTAL);
 			sign.setLayoutData(gd);
-			FillLayout signLayout = new FillLayout();
-			// room for the frames of markEditable()
-			signLayout.marginWidth = signLayout.marginHeight = 1;
-			sign.setLayout(signLayout);
+			sign.setLayout(new FillLayout());
 						
-			beatsText = new Text(sign, SWT.BORDER | SWT.RIGHT);
-			markEditable(beatsText);
+			beatsText = new ThemeText(sign, SWT.RIGHT);
 			beatsText.setText("4");
 			beatsText.addFocusListener(new FocusListener() {
 				public void focusGained(FocusEvent e) {
@@ -587,8 +562,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 				}
 			});
 			new Label(sign, SWT.CENTER).setText("/");
-			denomText = new Text(sign, SWT.BORDER | SWT.RIGHT);
-			markEditable(denomText);
+			denomText = new ThemeText(sign, SWT.RIGHT);
 			denomText.setText("4");
 			denomText.addFocusListener(new FocusListener() {
 				public void focusGained(FocusEvent e) {
@@ -608,8 +582,7 @@ public class Mc909SampleEditor extends SimpleSampleEditor implements KeyboardKey
 			if(format == null) bpm = 138;
 			else bpm = Math.max(Math.min(format.getSampleRate() * 60 / (float)wt.getTotalLength() * beats, 300), 5);
 			new Label(comp, SWT.NONE).setText("BPM:");
-			bpmText = new Text(comp, SWT.BORDER | SWT.RIGHT);
-			markEditable(bpmText);
+			bpmText = new ThemeText(comp, SWT.RIGHT);
 			nf = NumberFormat.getInstance();
 			nf.setMaximumIntegerDigits(3);
 			nf.setGroupingUsed(false);

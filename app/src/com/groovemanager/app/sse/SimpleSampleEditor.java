@@ -1374,6 +1374,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				public void widgetDefaultSelected(SelectionEvent e) {
 				}
 			});
+			b.setToolTipText("Play");
 			playButton = b;
 	
 			// ||
@@ -1386,6 +1387,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				public void widgetDefaultSelected(SelectionEvent e) {
 				}
 			});
+			b.setToolTipText("Pause");
 			pauseButton = b;
 	
 			// []
@@ -1398,6 +1400,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				public void widgetDefaultSelected(SelectionEvent e) {
 				}
 			});
+			b.setToolTipText("Stop");
 			stopButton = b;
 			
 			// O
@@ -1410,6 +1413,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				public void widgetDefaultSelected(SelectionEvent e) {
 				}
 			});
+			b.setToolTipText("Record");
 			recButton = b;
 	
 			/*
@@ -1501,6 +1505,7 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 				public void widgetDefaultSelected(SelectionEvent e) {
 				}
 			});
+			b.setToolTipText("Loop");
 			loopButton = b;
 			
 			ThemeManager.getDefault().addThemeListener(comp, new ThemeListener() {

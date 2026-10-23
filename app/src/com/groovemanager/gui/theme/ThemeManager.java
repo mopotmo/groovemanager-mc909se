@@ -19,6 +19,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
@@ -62,7 +64,7 @@ public class ThemeManager implements IPropertyChangeListener{
 	 * ConfigManager
 	 */
 	protected ThemeManager(){
-		ConfigManager.getDefault().getPrefStore().setDefault(PREF_KEY, Theme.CLASSIC.getId());
+		ConfigManager.getDefault().getPrefStore().setDefault(PREF_KEY, Theme.MC909.getId());
 		ConfigManager.getDefault().getPrefStore().addPropertyChangeListener(this);
 		theme = Theme.forId(ConfigManager.getDefault().getPrefStore().getString(PREF_KEY));
 		Display d = Display.getDefault();
@@ -71,6 +73,7 @@ public class ThemeManager implements IPropertyChangeListener{
 		d.addListener(SWT.Skin, new Listener() {
 			public void handleEvent(Event e) {
 				if(e.widget instanceof Label) skinLabel((Label)e.widget);
+				else if(e.widget instanceof List) skinList((List)e.widget);
 			}
 		});
 	}
@@ -100,6 +103,15 @@ public class ThemeManager implements IPropertyChangeListener{
 		l.setForeground(theme.getPanelForeground());
 	}
 	/**
+	 * Apply the theme´s input colors to a list of a themed Shell
+	 * @param l The list
+	 */
+	protected void skinList(List l){
+		if(l.isDisposed() || l.getShell().getData(THEMED_SHELL) == null) return;
+		l.setBackground(theme.getInputBackground());
+		l.setForeground(theme.getInputForeground());
+	}
+	/**
 	 * Switch the native widgets between their light and dark appearance
 	 * @param d The Display
 	 * @param dark true for the dark appearance
@@ -107,11 +119,13 @@ public class ThemeManager implements IPropertyChangeListener{
 	protected void setDarkAppearance(Display d, boolean dark){
 		d.setDarkThemePreferred(dark);
 		if(!SWT.getPlatform().equals("cocoa")) return;
-		// SWT on macOS reads the system colors (e.g. the background of lists,
-		// tables and windows) only on start and when the system appearance
-		// changes. Let it read them again in the new appearance. The cocoa
-		// classes only exist in the macOS SWT, so they are used via
-		// reflection.
+		// setDarkThemePreferred(false) lets the application follow the
+		// system appearance, which may be dark. Set the light or dark
+		// appearance of the application explicitly instead. SWT on macOS also
+		// reads the system colors (e.g. the background of lists, tables and
+		// windows) only on start and when the system appearance changes, so
+		// let it read them again. The cocoa classes only exist in the macOS
+		// SWT, so they are used via reflection.
 		try {
 			Class nsString = Class.forName("org.eclipse.swt.internal.cocoa.NSString");
 			Class nsAppearance = Class.forName("org.eclipse.swt.internal.cocoa.NSAppearance");
@@ -121,7 +135,13 @@ public class ThemeManager implements IPropertyChangeListener{
 			long appearanceId = nsAppearance.getField("id").getLong(appearance);
 			long appearanceClass = ((Long)os.getMethod("objc_getClass", new Class[]{String.class}).invoke(null, new Object[]{"NSAppearance"})).longValue();
 			long selector = ((Long)os.getMethod("sel_registerName", new Class[]{String.class}).invoke(null, new Object[]{"setCurrentAppearance:"})).longValue();
-			os.getMethod("objc_msgSend", new Class[]{long.class, long.class, long.class}).invoke(null, new Object[]{Long.valueOf(appearanceClass), Long.valueOf(selector), Long.valueOf(appearanceId)});
+			Method msgSend = os.getMethod("objc_msgSend", new Class[]{long.class, long.class, long.class});
+			msgSend.invoke(null, new Object[]{Long.valueOf(appearanceClass), Long.valueOf(selector), Long.valueOf(appearanceId)});
+			Class nsApplication = Class.forName("org.eclipse.swt.internal.cocoa.NSApplication");
+			Object app = nsApplication.getMethod("sharedApplication", new Class[0]).invoke(null, new Object[0]);
+			long appId = nsApplication.getField("id").getLong(app);
+			long setAppearance = ((Long)os.getMethod("sel_registerName", new Class[]{String.class}).invoke(null, new Object[]{"setAppearance:"})).longValue();
+			msgSend.invoke(null, new Object[]{Long.valueOf(appId), Long.valueOf(setAppearance), Long.valueOf(appearanceId)});
 			Method initColors = Display.class.getDeclaredMethod("initColors", new Class[0]);
 			initColors.setAccessible(true);
 			initColors.invoke(d, new Object[0]);
@@ -138,6 +158,17 @@ public class ThemeManager implements IPropertyChangeListener{
 		if(c instanceof List || c instanceof Table || c instanceof Tree || c instanceof Text || c instanceof Combo){
 			c.setBackground(null);
 			c.setForeground(null);
+		}
+		if(c instanceof List) skinList((List)c);
+		// SWT on macOS stores the text color of the old appearance in the
+		// tab titles, setting the titles again uses the new one
+		if(c instanceof TabFolder){
+			TabItem[] items = ((TabFolder)c).getItems();
+			for (int i = 0; i < items.length; i++) {
+				String text = items[i].getText();
+				items[i].setText("");
+				items[i].setText(text);
+			}
 		}
 		if(c instanceof Composite){
 			Control[] children = ((Composite)c).getChildren();
@@ -172,14 +203,19 @@ public class ThemeManager implements IPropertyChangeListener{
 		theme = newTheme;
 		Display display = Display.getCurrent();
 		setDarkAppearance(display, theme.isDark());
+		// first the native colors, so that the listeners can override them
+		Shell[] shells = display.getShells();
+		for (int i = 0; i < shells.length; i++) {
+			resetDefaultColors(shells[i]);
+		}
 		ArrayList copy = new ArrayList(listeners);
 		for (Iterator iter = copy.iterator(); iter.hasNext();) {
 			ThemeListener l = (ThemeListener) iter.next();
 			l.applyTheme(theme);
 		}
-		Shell[] shells = display.getShells();
 		for (int i = 0; i < shells.length; i++) {
-			resetDefaultColors(shells[i]);
+			// icons and drawn buttons change their preferred sizes
+			shells[i].layout(true, true);
 			shells[i].redraw(0, 0, shells[i].getSize().x, shells[i].getSize().y, true);
 		}
 	}

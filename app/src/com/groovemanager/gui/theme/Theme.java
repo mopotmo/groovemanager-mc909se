@@ -34,7 +34,7 @@ public class Theme {
 	/**
 	 * Steel blue panels and blue displays like Roland´s own MC-909 Editor
 	 */
-	public final static Theme MC909_EDITOR = new Theme("mc909editor", "MC-909 Editor", false);
+	public final static Theme MC909_EDITOR = new Theme("mc909editor", "MC-909 Editor", true);
 	/**
 	 * All available themes
 	 */
@@ -75,7 +75,9 @@ public class Theme {
 		MODERN.waveBackground = new RGB(18, 20, 24);
 		MODERN.waveChannelBackground = new RGB(26, 29, 35);
 		MODERN.wave = new RGB(86, 200, 245);
-		MODERN.waveMiddleLine = new RGB(40, 44, 52);
+		// a tone of the waveform instead of white, so that the middle line
+		// doesn't form a grid with the slice markers
+		MODERN.waveMiddleLine = new RGB(60, 140, 180);
 		MODERN.waveSelection = new RGB(245, 176, 65);
 		MODERN.wavePosition = new RGB(240, 242, 245);
 		MODERN.waveMarker = new RGB(126, 224, 129);
@@ -83,7 +85,7 @@ public class Theme {
 		MODERN.overviewBackground = new RGB(18, 20, 24);
 		MODERN.overviewChannelBackground = new RGB(22, 25, 30);
 		MODERN.overviewWave = new RGB(61, 126, 166);
-		MODERN.overviewMiddleLine = new RGB(32, 36, 43);
+		MODERN.overviewMiddleLine = new RGB(60, 140, 180);
 		// the overview selection shows the visible part, so keep it calm
 		MODERN.overviewSelection = new RGB(120, 132, 150);
 		MODERN.overviewPosition = new RGB(240, 242, 245);
@@ -92,12 +94,12 @@ public class Theme {
 		MODERN.panelBackground = new RGB(30, 32, 38);
 		MODERN.stripBackground = new RGB(18, 20, 24);
 		MODERN.keyPanel = new RGB(18, 20, 24);
-		MODERN.keyWhite = new RGB(44, 48, 56);
-		MODERN.keyBlack = new RGB(24, 27, 32);
-		MODERN.keyLine = new RGB(18, 20, 24);
-		MODERN.pad = new RGB(64, 70, 81);
+		MODERN.keyWhite = new RGB(86, 93, 108);
+		MODERN.keyBlack = new RGB(14, 16, 20);
+		MODERN.keyLine = new RGB(14, 16, 20);
+		MODERN.pad = new RGB(124, 133, 151);
 		MODERN.padPressed = new RGB(245, 176, 65);
-		MODERN.padFrame = new RGB(18, 20, 24);
+		MODERN.padFrame = new RGB(14, 16, 20);
 		MODERN.numBackground = new RGB(36, 40, 47);
 		MODERN.numForeground = new RGB(160, 168, 180);
 		MODERN.icon = new RGB(226, 230, 236);
@@ -113,7 +115,9 @@ public class Theme {
 		MC909.waveBackground = new RGB(204, 216, 239);
 		MC909.waveChannelBackground = new RGB(204, 216, 239);
 		MC909.wave = new RGB(52, 60, 120);
-		MC909.waveMiddleLine = new RGB(186, 198, 226);
+		// a tone of the ink instead of white, so that the middle line doesn't
+		// form a grid with the red slice markers
+		MC909.waveMiddleLine = new RGB(96, 110, 190);
 		MC909.waveSelection = new RGB(132, 150, 220);
 		MC909.wavePosition = new RGB(30, 36, 90);
 		MC909.waveMarker = new RGB(214, 60, 70);
@@ -121,7 +125,7 @@ public class Theme {
 		MC909.overviewBackground = new RGB(194, 206, 232);
 		MC909.overviewChannelBackground = new RGB(194, 206, 232);
 		MC909.overviewWave = new RGB(52, 60, 120);
-		MC909.overviewMiddleLine = new RGB(178, 190, 220);
+		MC909.overviewMiddleLine = new RGB(96, 110, 190);
 		MC909.overviewSelection = new RGB(132, 150, 220);
 		MC909.overviewPosition = new RGB(30, 36, 90);
 		// the blue-silver of the top panel
@@ -130,11 +134,11 @@ public class Theme {
 		// the velocity pads sit on a slightly darker strip
 		MC909.stripBackground = new RGB(146, 157, 174);
 		MC909.keyPanel = new RGB(146, 157, 174);
-		MC909.keyWhite = new RGB(206, 211, 220);
+		MC909.keyWhite = new RGB(234, 238, 244);
 		MC909.keyBlack = new RGB(40, 48, 56);
 		MC909.keyLine = new RGB(40, 48, 56);
 		MC909.pad = new RGB(150, 168, 198);
-		MC909.padPressed = new RGB(255, 144, 18);
+		MC909.padPressed = new RGB(250, 72, 82);
 		MC909.padFrame = new RGB(36, 44, 58);
 		MC909.numBackground = new RGB(47, 53, 59);
 		MC909.numForeground = new RGB(230, 234, 240);
@@ -151,40 +155,59 @@ public class Theme {
 		MC909.buttonEdge = new RGB(96, 108, 124);
 		MC909.buttonText = new RGB(33, 53, 83);
 		MC909.buttonTextDisabled = new RGB(120, 132, 150);
+		// text fields, dropdowns and lists look like small LCDs
+		MC909.inputBackground = new RGB(214, 224, 242);
+		MC909.inputForeground = new RGB(33, 53, 83);
 
-		// colors taken from a screenshot of Roland's MC-909 Editor
-		MC909_EDITOR.waveBackground = new RGB(59, 67, 82);
-		MC909_EDITOR.waveChannelBackground = new RGB(22, 26, 112);
+		// after Roland's MC-909 Editor: deep steel blue panels with white
+		// labels, navy displays with cyan waveforms. It uses the dark native
+		// widgets, so that input fields don't stand out as white boxes. All
+		// text has a contrast of at least 4.5:1, outlines at least 3:1.
+		MC909_EDITOR.waveBackground = new RGB(16, 26, 78);
+		MC909_EDITOR.waveChannelBackground = new RGB(16, 26, 78);
 		MC909_EDITOR.wave = new RGB(120, 210, 255);
-		MC909_EDITOR.waveMiddleLine = new RGB(40, 46, 136);
-		MC909_EDITOR.waveSelection = new RGB(230, 236, 255);
+		// a tone of the waveform instead of white, so that the middle line
+		// doesn't form a grid with the slice markers
+		MC909_EDITOR.waveMiddleLine = new RGB(70, 140, 200);
+		MC909_EDITOR.waveSelection = new RGB(150, 180, 255);
 		MC909_EDITOR.wavePosition = new RGB(255, 255, 255);
-		MC909_EDITOR.waveMarker = new RGB(120, 230, 140);
-		MC909_EDITOR.waveMarkerHighlight = new RGB(255, 190, 60);
-		MC909_EDITOR.overviewBackground = new RGB(59, 67, 82);
-		MC909_EDITOR.overviewChannelBackground = new RGB(20, 24, 90);
-		MC909_EDITOR.overviewWave = new RGB(90, 160, 220);
-		MC909_EDITOR.overviewMiddleLine = new RGB(32, 38, 110);
-		MC909_EDITOR.overviewSelection = new RGB(140, 170, 230);
+		// amber slices are told apart from the cyan waveform by their hue
+		MC909_EDITOR.waveMarker = new RGB(255, 190, 70);
+		MC909_EDITOR.waveMarkerHighlight = new RGB(255, 96, 110);
+		MC909_EDITOR.overviewBackground = new RGB(14, 22, 66);
+		MC909_EDITOR.overviewChannelBackground = new RGB(14, 22, 66);
+		MC909_EDITOR.overviewWave = new RGB(96, 176, 232);
+		MC909_EDITOR.overviewMiddleLine = new RGB(70, 140, 200);
+		MC909_EDITOR.overviewSelection = new RGB(150, 180, 255);
 		MC909_EDITOR.overviewPosition = new RGB(255, 255, 255);
-		MC909_EDITOR.panelBackground = new RGB(138, 150, 168);
-		MC909_EDITOR.panelForeground = new RGB(248, 250, 252);
-		MC909_EDITOR.stripBackground = new RGB(108, 119, 136);
-		MC909_EDITOR.keyPanel = new RGB(108, 119, 136);
-		MC909_EDITOR.keyWhite = new RGB(196, 202, 212);
-		MC909_EDITOR.keyBlack = new RGB(42, 48, 60);
-		MC909_EDITOR.keyLine = new RGB(42, 48, 60);
-		MC909_EDITOR.pad = new RGB(160, 168, 180);
-		MC909_EDITOR.padPressed = new RGB(255, 144, 18);
-		MC909_EDITOR.padFrame = new RGB(42, 48, 60);
-		MC909_EDITOR.numBackground = new RGB(42, 48, 60);
-		MC909_EDITOR.numForeground = new RGB(248, 250, 252);
-		MC909_EDITOR.icon = new RGB(30, 34, 44);
-		MC909_EDITOR.iconDisabled = new RGB(110, 118, 132);
-		MC909_EDITOR.iconActive = new RGB(20, 110, 220);
-		MC909_EDITOR.iconRecord = new RGB(220, 40, 30);
-		MC909_EDITOR.frame = new RGB(42, 48, 60);
+		MC909_EDITOR.panelBackground = new RGB(52, 62, 80);
+		MC909_EDITOR.panelForeground = new RGB(236, 240, 246);
+		MC909_EDITOR.stripBackground = new RGB(40, 48, 62);
+		MC909_EDITOR.keyPanel = new RGB(40, 48, 62);
+		MC909_EDITOR.keyWhite = new RGB(178, 190, 208);
+		MC909_EDITOR.keyBlack = new RGB(22, 26, 34);
+		MC909_EDITOR.keyLine = new RGB(22, 26, 34);
+		MC909_EDITOR.pad = new RGB(104, 120, 146);
+		MC909_EDITOR.padPressed = new RGB(250, 72, 82);
+		MC909_EDITOR.padFrame = new RGB(22, 26, 34);
+		MC909_EDITOR.numBackground = new RGB(22, 26, 34);
+		MC909_EDITOR.numForeground = new RGB(236, 240, 246);
+		MC909_EDITOR.icon = new RGB(236, 240, 246);
+		MC909_EDITOR.iconDisabled = new RGB(138, 150, 168);
+		MC909_EDITOR.iconActive = new RGB(255, 190, 70);
+		MC909_EDITOR.iconRecord = new RGB(255, 96, 110);
+		MC909_EDITOR.frame = new RGB(122, 138, 164);
 		MC909_EDITOR.softWave = true;
+		// flat buttons like the ones of the editor
+		MC909_EDITOR.deviceButtons = true;
+		MC909_EDITOR.buttonFace = new RGB(78, 92, 116);
+		MC909_EDITOR.buttonFacePressed = new RGB(64, 76, 98);
+		MC909_EDITOR.buttonEdge = new RGB(122, 138, 164);
+		MC909_EDITOR.buttonText = new RGB(236, 240, 246);
+		MC909_EDITOR.buttonTextDisabled = new RGB(138, 150, 168);
+		// navy display fields with cyan text like in the editor
+		MC909_EDITOR.inputBackground = new RGB(16, 26, 78);
+		MC909_EDITOR.inputForeground = new RGB(150, 220, 255);
 	}
 	/**
 	 * The key under which the theme is stored in the preferences
@@ -237,12 +260,17 @@ public class Theme {
 	 */
 	RGB buttonFace, buttonFacePressed, buttonEdge, buttonText, buttonTextDisabled;
 	/**
+	 * Colors of text fields, dropdowns and lists, <code>null</code> for the
+	 * native colors
+	 */
+	RGB inputBackground, inputForeground;
+	/**
 	 * Frame around the content areas (lists, panels, waveform displays),
 	 * <code>null</code> for none
 	 */
 	RGB frame;
 	/**
-	 * true for rounded waveform displays with an inner shadow
+	 * true for rounded waveform displays with a smoothed waveform
 	 */
 	boolean softWave;
 	/**
@@ -263,13 +291,13 @@ public class Theme {
 	/**
 	 * Get the theme with the given id
 	 * @param id The theme´s id
-	 * @return The theme with the given id or CLASSIC, if there is none
+	 * @return The theme with the given id or MC909, if there is none
 	 */
 	public static Theme forId(String id){
 		for (int i = 0; i < THEMES.length; i++) {
 			if(THEMES[i].id.equals(id)) return THEMES[i];
 		}
-		return CLASSIC;
+		return MC909;
 	}
 	/**
 	 * Get the key under which this theme is stored in the preferences
@@ -432,8 +460,8 @@ public class Theme {
 		return color(frame);
 	}
 	/**
-	 * Tells whether the waveform displays should be rounded and have an
-	 * inner shadow
+	 * Tells whether the waveform displays should be rounded and show a
+	 * smoothed waveform
 	 * @return true for soft waveform displays
 	 */
 	public boolean hasSoftWave(){
@@ -453,6 +481,20 @@ public class Theme {
 	 */
 	public Color getButtonFace(boolean pressed){
 		return color(pressed ? buttonFacePressed : buttonFace);
+	}
+	/**
+	 * Get the background of text fields, dropdowns and lists
+	 * @return The background Color or <code>null</code> for the native one
+	 */
+	public Color getInputBackground(){
+		return color(inputBackground);
+	}
+	/**
+	 * Get the text color of text fields, dropdowns and lists
+	 * @return The text Color or <code>null</code> for the native one
+	 */
+	public Color getInputForeground(){
+		return color(inputForeground);
 	}
 	/**
 	 * Get the color of the outline of the device buttons

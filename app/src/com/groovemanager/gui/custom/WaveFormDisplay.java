@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
@@ -30,6 +31,7 @@ import org.eclipse.swt.widgets.ScrollBar;
 
 import com.groovemanager.sampled.waveform.MarkableWaveFormDisplay;
 import com.groovemanager.sampled.waveform.Marker;
+import com.groovemanager.sampled.waveform.WaveForm;
 
 /**
  * This class is an implementation of the abstract MarkableWaveFormDisplay
@@ -89,9 +91,17 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	 */
 	gradient,
 	/**
-	 * Draw rounded corners and an inner shadow?
+	 * Draw rounded corners and a smoothed waveform?
 	 */
 	soft;
+	/**
+	 * Opacity of the middle line in the smoothed look
+	 */
+	protected final static int MIDDLE_LINE_ALPHA = 40;
+	/**
+	 * Opacity of the (not selected) markers in the smoothed look
+	 */
+	protected final static int MARKER_ALPHA = 140;
 	/**
 	 * The default cursor
 	 */
@@ -300,22 +310,14 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		finally{
 			currentGC = null;
 		}
-		if(soft){
-			// a faint shadow along the top edge makes the display look
-			// recessed, like the LCD of the MC-909 behind its bezel
-			gc.setAlpha(64);
-			gc.setForeground(comp.getDisplay().getSystemColor(SWT.COLOR_BLACK));
-			gc.setBackground(channelBackgroundColor);
-			gc.fillGradientRectangle(0, 0, area.width, Math.min(8, area.height), true);
-			gc.setAlpha(255);
-			Frames.clipCorners(gc, area.width, area.height, comp.getParent().getBackground());
-		}
+		if(soft) Frames.clipCorners(gc, area.width, area.height, comp.getParent().getBackground());
 		Frames.draw(gc, 0, 0, area.width, area.height);
 	}
 	/**
-	 * Switch between square displays and rounded displays with an inner
-	 * shadow
-	 * @param soft true for rounded displays with an inner shadow
+	 * Switch between the 2004 look (square display, one line per pixel
+	 * column) and rounded displays with a smoothed, anti-aliased waveform
+	 * and a faint middle line
+	 * @param soft true for the smoothed look
 	 */
 	public void setSoft(boolean soft){
 		this.soft = soft;
@@ -419,7 +421,13 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 	}
 	protected void drawMarker(Marker m) {
 		if(currentGC == null) requestPaint();
-		else fill(markerColor, leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
+		else{
+			// in the smoothed look the slices don't cover the waveform; the
+			// selected marker stays opaque, so that it stands out
+			if(soft) currentGC.setAlpha(MARKER_ALPHA);
+			fill(markerColor, leftOffset + dataToPixel(m.getPosition()), topOffset, 1, getUsableDisplayHeight());
+			currentGC.setAlpha(255);
+		}
 	}
 	protected void eraseMarker(Marker m) {
 		if(currentGC == null) requestPaint();
@@ -453,10 +461,6 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 			currentGC.fillGradientRectangle(x, y, width, height, true);
 		}
 		else fill(channelBackgroundColor, x, y, width, height);
-		// the middle line is drawn behind the waveform, so that it only
-		// shows where the signal is quiet
-		currentGC.setForeground(middleLineColor);
-		currentGC.drawLine(x, y + height / 2, x + width, y + height / 2);
 	}
 	protected void drawGlobalForeground(int x, int y, int width, int height) {
 		// painted on top of the contentBuffer in paint()
@@ -471,7 +475,72 @@ public class WaveFormDisplay extends MarkableWaveFormDisplay {
 		}
 	}
 	protected void drawChannelForeground(int x, int y, int width, int height) {
-		// the middle line is part of the channel background
+		if(currentGC == null) return;
+		// in the smoothed look the middle line only shines through faintly
+		if(soft) currentGC.setAlpha(MIDDLE_LINE_ALPHA);
+		currentGC.setForeground(middleLineColor);
+		currentGC.drawLine(x, y + height / 2, x + width, y + height / 2);
+		currentGC.setAlpha(255);
+	}
+	/**
+	 * Draw the waveform. In the smoothed look, the outline of each channel
+	 * is slightly smoothed and filled as one anti-aliased shape instead of
+	 * drawing a line per pixel column.
+	 * @see com.groovemanager.sampled.waveform.AbstractWaveFormDisplay#drawWave()
+	 */
+	protected void drawWave() {
+		if(!soft || currentGC == null){
+			super.drawWave();
+			return;
+		}
+		WaveForm w = getVisibleWaveForm();
+		int height = getChannelHeight();
+		int columns = getUsableDisplayWidth() + 1;
+		float[] min = new float[columns], max = new float[columns];
+		currentGC.setAntialias(SWT.ON);
+		currentGC.setBackground(waveColor);
+		for(int channel = 0; channel < getChannels(); channel++){
+			int top = getChannelTop(channel);
+			w.rewind();
+			int count = 0;
+			min[count] = w.getMin(channel);
+			max[count] = w.getMax(channel);
+			count++;
+			while(count < columns && w.next()){
+				min[count] = w.getMin(channel);
+				max[count] = w.getMax(channel);
+				count++;
+			}
+			Path p = new Path(comp.getDisplay());
+			// upper outline from left to right, lower one back
+			for(int x = 0; x < count; x++){
+				float y = smoothY(top, height, max, x, count);
+				if(x == 0) p.moveTo(leftOffset, y);
+				else p.lineTo(leftOffset + x, y);
+			}
+			for(int x = count - 1; x >= 0; x--){
+				p.lineTo(leftOffset + x, smoothY(top, height, min, x, count));
+			}
+			p.close();
+			currentGC.fillPath(p);
+			p.dispose();
+		}
+		currentGC.setAntialias(SWT.DEFAULT);
+	}
+	/**
+	 * Calculate the y coordinate of a waveform outline point, smoothed with
+	 * its neighbours (weights 1, 2, 1)
+	 * @param top The top of the channel
+	 * @param height The height of the channel
+	 * @param values The outline values
+	 * @param x The index of the point
+	 * @param count The number of valid values
+	 * @return The y coordinate
+	 */
+	private static float smoothY(int top, int height, float[] values, int x, int count){
+		float prev = values[Math.max(x - 1, 0)], next = values[Math.min(x + 1, count - 1)];
+		float v = (prev + 2 * values[x] + next) / 4;
+		return top + height / 2f - v / 128f * height / 2f;
 	}
 	protected void drawWaveLine(int x, int y, int x2, int y2) {
 		if(currentGC == null) return;
