@@ -59,6 +59,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Spinner;
@@ -959,9 +961,15 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		fileMenu.add(fileOpenAction);
 		fileOpenAction.addFileOpenListener(this);
 		
-		fileCloseAction = new FileCloseAction("&Close\tAlt+X");
+		if(SWT.getPlatform().equals("cocoa")){
+			fileCloseAction = new FileCloseAction("&Close\tCommand+W");
+			fileCloseAction.setAccelerator(SWT.MOD1 | 'w');
+		}
+		else{
+			fileCloseAction = new FileCloseAction("&Close\tAlt+X");
+			fileCloseAction.setAccelerator(SWT.ALT | 'x');
+		}
 		fileCloseAction.setId("Close");
-		fileCloseAction.setAccelerator(SWT.ALT | 'x');
 		fileMenu.add(fileCloseAction);
 		fileCloseAction.addFileCloseListener(this);
 
@@ -1008,6 +1016,23 @@ public class SimpleSampleEditor extends EditorWindow implements FileNewListener,
 		configAction = createConfigAction();
 		configAction.setId("Settings");
 		configAction.setAccelerator(SWT.ALT | 's');
+		if(SWT.getPlatform().equals("cocoa")){
+			// On macOS the settings are opened with Command+, from the
+			// "Settings..." item of the application menu
+			String text = configAction.getText();
+			if(text.indexOf('\t') >= 0) configAction.setText(text.substring(0, text.indexOf('\t')));
+			configAction.setAccelerator(0);
+			Menu systemMenu = Display.getDefault().getSystemMenu();
+			MenuItem[] items = systemMenu == null ? new MenuItem[0] : systemMenu.getItems();
+			for (int i = 0; i < items.length; i++) {
+				if(items[i].getID() == SWT.ID_PREFERENCES) items[i].addListener(SWT.Selection, new Listener() {
+					public void handleEvent(Event e) {
+						configAction.setShell(getShell());
+						configAction.run();
+					}
+				});
+			}
+		}
 		optionsMenu.add(configAction);
 		optionsMenu.addMenuListener(new IMenuListener(){
 			public void menuAboutToShow(IMenuManager manager) {

@@ -398,6 +398,10 @@ public class WaveTab implements AudioPlayerProvider, ModificationListener, WaveF
 					case SWT.DEL :
 						editAction(EditAction.DELETE);
 						break;
+					case SWT.BS :
+						// the delete key of Mac keyboards
+						if(SWT.getPlatform().equals("cocoa")) editAction(EditAction.DELETE);
+						break;
 					default :
 						break;
 				}
